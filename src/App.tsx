@@ -50,7 +50,7 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   }, [config])
 
-  const update = <K extends keyof AvatarConfig>(key: K, value: AvatarConfig[K]) => {
+  function update<K extends keyof AvatarConfig>(key: K, value: AvatarConfig[K]) {
     setConfig((current) => ({ ...current, [key]: value }))
   }
 
@@ -72,9 +72,14 @@ export default function App() {
   }
 
   const copyJson = async () => {
-    await navigator.clipboard.writeText(JSON.stringify(config, null, 2))
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1400)
+    const serialized = JSON.stringify(config, null, 2)
+    try {
+      await navigator.clipboard.writeText(serialized)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1400)
+    } catch {
+      window.prompt('Copie cette configuration JSON :', serialized)
+    }
   }
 
   return (
