@@ -1,170 +1,323 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AvatarScene from './avatar/AvatarScene'
 import {
-  defaultAvatarConfig,
-  type AvatarConfig,
-  type TopStyle,
-} from './avatar/types'
+  expressionOptions,
+  garmentPalette,
+  hairOptions,
+  headwearOptions,
+  headwearPalette,
+  morphologyOptions,
+  pantsOptions,
+  shoeOptions,
+  skinPalette,
+  topOptions,
+} from './avatar/catalog'
+import { loadAvatarConfig, saveAvatarConfig, serializeAvatarConfig } from './avatar/config'
+import { defaultAvatarConfig, type AvatarConfig } from './avatar/types'
 
-const STORAGE_KEY = 'maitre-artisan-avatar-studio:v1'
+type SectionId = 'body' | 'face' | 'hair' | 'tops' | 'pants' | 'shoes' | 'headwear' | 'accessories' | 'colors'
 
-function loadConfig(): AvatarConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? { ...defaultAvatarConfig, ...JSON.parse(raw) } : defaultAvatarConfig
-  } catch {
-    return defaultAvatarConfig
-  }
-}
+const sections: { id: SectionId; label: string; icon: string }[] = [
+  { id: 'body', label: 'Corps', icon: '●' },
+  { id: 'face', label: 'Visage', icon: '◉' },
+  { id: 'hair', label: 'Cheveux', icon: '✦' },
+  { id: 'tops', label: 'Hauts', icon: '▣' },
+  { id: 'pants', label: 'Pantalons', icon: '▥' },
+  { id: 'shoes', label: 'Chaussures', icon: '◒' },
+  { id: 'headwear', label: 'Couvre-chefs', icon: '⌒' },
+  { id: 'accessories', label: 'Accessoires', icon: '✚' },
+  { id: 'colors', label: 'Couleurs', icon: '●' },
+]
 
-function ColorField({
-  label,
+function OptionGrid<T extends string>({
+  options,
   value,
   onChange,
+  compact = false,
 }: {
-  label: string
-  value: string
-  onChange: (value: string) => void
+  options: { id: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+  compact?: boolean
 }) {
   return (
-    <label className="color-field">
-      <span>{label}</span>
-      <span className="color-control">
-        <input
-          aria-label={label}
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
+    <div className={compact ? 'option-grid compact' : 'option-grid'}>
+      {options.map((option) => (
+        <button
+          key={option.id}
+          className={value === option.id ? 'option-card active' : 'option-card'}
+          onClick={() => onChange(option.id)}
+        >
+          <span className="option-preview" aria-hidden="true" />
+          <span>{option.label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function Palette({ value, colors, onChange }: { value: string; colors: string[]; onChange: (color: string) => void }) {
+  return (
+    <div className="palette-row">
+      {colors.map((color) => (
+        <button
+          key={color}
+          aria-label={`Couleur ${color}`}
+          className={value.toUpperCase() === color.toUpperCase() ? 'swatch active' : 'swatch'}
+          style={{ background: color }}
+          onClick={() => onChange(color)}
         />
-        <code>{value.toUpperCase()}</code>
-      </span>
-    </label>
+      ))}
+      <label className="custom-color" title="Couleur personnalisée">
+        +
+        <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
+      </label>
+    </div>
   )
 }
 
 export default function App() {
-  const [config, setConfig] = useState<AvatarConfig>(loadConfig)
-  const [copied, setCopied] = useState(false)
+  const [config, setConfig] = useState<AvatarConfig>(loadAvatarConfig)
+  const [activeSection, setActiveSection] = useState<SectionId>('body')
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+    saveAvatarConfig(config)
   }, [config])
+
+  const serialized = useMemo(() => serializeAvatarConfig(config), [config])
 
   function update<K extends keyof AvatarConfig>(key: K, value: AvatarConfig[K]) {
     setConfig((current) => ({ ...current, [key]: value }))
   }
 
-  const randomize = () => {
-    const tops: TopStyle[] = ['tee', 'hoodie', 'work-jacket']
-    const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)]
-    const colors = ['#B83A3A', '#D56B28', '#D1A72C', '#2D6B62', '#345B88', '#4E445F', '#353A40']
-    const skins = ['#F1C39A', '#D7A06F', '#B9784D', '#8D573B', '#5F382B']
-
-    setConfig((current) => ({
-      ...current,
-      skinColor: pick(skins),
-      topStyle: pick(tops),
-      topColor: pick(colors),
-      pantsColor: pick(colors),
-      beanie: Math.random() > 0.45,
-      beanieColor: pick(colors),
-    }))
+  function notify(text: string) {
+    setMessage(text)
+    window.setTimeout(() => setMessage(''), 1500)
   }
 
-  const copyJson = async () => {
-    const serialized = JSON.stringify(config, null, 2)
+  const randomize = () => {
+    const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)]
+    setConfig((current) => ({
+      ...current,
+      morphology: pick(morphologyOptions).id,
+      skinColor: pick(skinPalette),
+      expression: pick(expressionOptions).id,
+      hairStyle: pick(hairOptions).id,
+      hairColor: pick(garmentPalette),
+      topStyle: pick(topOptions).id,
+      topColor: pick(garmentPalette),
+      pantsStyle: pick(pantsOptions).id,
+      pantsColor: pick(garmentPalette),
+      shoeStyle: pick(shoeOptions).id,
+      shoeColor: pick(['#211F20', '#352C29', '#4B382C', '#1E2835']),
+      headwear: pick(headwearOptions).id,
+      headwearColor: pick(headwearPalette),
+      gloves: Math.random() > 0.45,
+      toolbelt: Math.random() > 0.25,
+    }))
+    notify('Personnage aléatoire généré')
+  }
+
+  const exportJson = async () => {
     try {
       await navigator.clipboard.writeText(serialized)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1400)
+      notify('Configuration JSON copiée')
     } catch {
       window.prompt('Copie cette configuration JSON :', serialized)
     }
   }
 
+  const downloadJson = () => {
+    const blob = new Blob([serialized], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'maitre-artisan-avatar.json'
+    anchor.click()
+    URL.revokeObjectURL(url)
+    notify('Configuration exportée')
+  }
+
   return (
-    <main className="studio-shell">
-      <section className="viewer-panel">
-        <header className="viewer-header">
+    <main className="studio-layout">
+      <aside className="sidebar">
+        <div className="brand-block">
+          <div className="brand-mark">MA</div>
           <div>
-            <p className="eyebrow">MAÎTRE ARTISAN</p>
-            <h1>Avatar Studio 3D</h1>
+            <strong>Maître Artisan</strong>
+            <span>Avatar Studio 3D</span>
           </div>
-          <span className="status-pill">Prototype indépendant</span>
+        </div>
+
+        <nav className="studio-nav" aria-label="Catégories du vestiaire">
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              className={activeSection === section.id ? 'nav-item active' : 'nav-item'}
+              onClick={() => setActiveSection(section.id)}
+            >
+              <span className="nav-icon">{section.icon}</span>
+              <span>{section.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <button className="random-button" onClick={randomize}>↻ Personnage aléatoire</button>
+      </aside>
+
+      <section className="viewer-column">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">PERSONNAGE ÉTALON — GATE 0</p>
+            <h1>Vestiaire 3D modulaire</h1>
+          </div>
+          <div className="top-actions">
+            <button className="toolbar-button" onClick={() => notify('Sauvegardé automatiquement')}>▣ Sauvegarder</button>
+            <button className="toolbar-button" onClick={downloadJson}>⇧ Exporter</button>
+          </div>
         </header>
 
-        <div className="viewer-stage">
+        <div className="viewer-stage premium">
+          <div className="stage-copy">
+            <span>Ton métier.</span>
+            <span>Ton avatar.</span>
+            <strong>Ta progression.</strong>
+          </div>
           <AvatarScene config={config} />
           <div className="viewer-hint">Glisse pour tourner · pince/molette pour zoomer</div>
+          {message && <div className="toast">{message}</div>}
         </div>
       </section>
 
-      <aside className="wardrobe-panel">
+      <aside className="wardrobe-panel light-panel">
         <div className="wardrobe-heading">
           <div>
-            <p className="eyebrow">PERSONNAGE ÉTALON</p>
-            <h2>Vestiaire</h2>
+            <p className="eyebrow blue">CONFIGURATION RÉELLE</p>
+            <h2>{sections.find((section) => section.id === activeSection)?.label}</h2>
           </div>
-          <button className="ghost-button" onClick={randomize}>Aléatoire</button>
+          <button className="small-reset" onClick={() => setConfig(defaultAvatarConfig)}>Reset</button>
         </div>
 
-        <section className="control-section">
-          <h3>Haut</h3>
-          <div className="segmented-grid">
-            {([
-              ['tee', 'T-shirt'],
-              ['hoodie', 'Sweat'],
-              ['work-jacket', 'Veste chantier'],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                className={config.topStyle === value ? 'choice active' : 'choice'}
-                onClick={() => update('topStyle', value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </section>
+        {activeSection === 'body' && (
+          <>
+            <section className="control-section first">
+              <h3>Morphologie</h3>
+              <OptionGrid options={morphologyOptions} value={config.morphology} onChange={(value) => update('morphology', value)} />
+            </section>
+            <section className="control-section">
+              <h3>Teinte de peau</h3>
+              <Palette value={config.skinColor} colors={skinPalette} onChange={(color) => update('skinColor', color)} />
+            </section>
+          </>
+        )}
 
-        <section className="control-section">
-          <h3>Couleurs</h3>
-          <div className="color-list">
-            <ColorField label="Peau" value={config.skinColor} onChange={(value) => update('skinColor', value)} />
-            <ColorField label="Haut" value={config.topColor} onChange={(value) => update('topColor', value)} />
-            <ColorField label="Pantalon" value={config.pantsColor} onChange={(value) => update('pantsColor', value)} />
-            <ColorField label="Chaussures" value={config.shoeColor} onChange={(value) => update('shoeColor', value)} />
-          </div>
-        </section>
+        {activeSection === 'face' && (
+          <section className="control-section first">
+            <h3>Expression</h3>
+            <OptionGrid options={expressionOptions} value={config.expression} onChange={(value) => update('expression', value)} compact />
+          </section>
+        )}
 
-        <section className="control-section">
-          <div className="section-row">
-            <div>
-              <h3>Bonnet</h3>
-              <p className="muted">Premier accessoire 3D interchangeable.</p>
-            </div>
-            <button
-              className={config.beanie ? 'toggle active' : 'toggle'}
-              aria-pressed={config.beanie}
-              onClick={() => update('beanie', !config.beanie)}
-            >
-              {config.beanie ? 'ON' : 'OFF'}
+        {activeSection === 'hair' && (
+          <>
+            <section className="control-section first">
+              <h3>Coiffure</h3>
+              <OptionGrid options={hairOptions} value={config.hairStyle} onChange={(value) => update('hairStyle', value)} />
+            </section>
+            <section className="control-section">
+              <h3>Couleur des cheveux</h3>
+              <Palette value={config.hairColor} colors={['#221B18', '#4A3023', '#7B5130', '#B27A45', '#D4B276', '#151619']} onChange={(color) => update('hairColor', color)} />
+            </section>
+          </>
+        )}
+
+        {activeSection === 'tops' && (
+          <>
+            <section className="control-section first">
+              <h3>Haut</h3>
+              <OptionGrid options={topOptions} value={config.topStyle} onChange={(value) => update('topStyle', value)} />
+            </section>
+            <section className="control-section">
+              <h3>Couleur</h3>
+              <Palette value={config.topColor} colors={garmentPalette} onChange={(color) => update('topColor', color)} />
+            </section>
+          </>
+        )}
+
+        {activeSection === 'pants' && (
+          <>
+            <section className="control-section first">
+              <h3>Pantalon</h3>
+              <OptionGrid options={pantsOptions} value={config.pantsStyle} onChange={(value) => update('pantsStyle', value)} />
+            </section>
+            <section className="control-section">
+              <h3>Couleur</h3>
+              <Palette value={config.pantsColor} colors={garmentPalette} onChange={(color) => update('pantsColor', color)} />
+            </section>
+          </>
+        )}
+
+        {activeSection === 'shoes' && (
+          <>
+            <section className="control-section first">
+              <h3>Chaussures</h3>
+              <OptionGrid options={shoeOptions} value={config.shoeStyle} onChange={(value) => update('shoeStyle', value)} />
+            </section>
+            <section className="control-section">
+              <h3>Couleur</h3>
+              <Palette value={config.shoeColor} colors={['#17191C', '#352C29', '#554035', '#253143', '#E8E6E0']} onChange={(color) => update('shoeColor', color)} />
+            </section>
+          </>
+        )}
+
+        {activeSection === 'headwear' && (
+          <>
+            <section className="control-section first">
+              <h3>Couvre-chef</h3>
+              <OptionGrid options={headwearOptions} value={config.headwear} onChange={(value) => update('headwear', value)} />
+            </section>
+            {config.headwear !== 'none' && (
+              <section className="control-section">
+                <h3>Couleur</h3>
+                <Palette value={config.headwearColor} colors={headwearPalette} onChange={(color) => update('headwearColor', color)} />
+              </section>
+            )}
+          </>
+        )}
+
+        {activeSection === 'accessories' && (
+          <section className="control-section first accessory-list">
+            <button className={config.gloves ? 'accessory-toggle active' : 'accessory-toggle'} onClick={() => update('gloves', !config.gloves)}>
+              <span>Gants de chantier</span><strong>{config.gloves ? 'ON' : 'OFF'}</strong>
             </button>
-          </div>
-          {config.beanie && (
-            <ColorField label="Couleur bonnet" value={config.beanieColor} onChange={(value) => update('beanieColor', value)} />
-          )}
-        </section>
+            <button className={config.toolbelt ? 'accessory-toggle active' : 'accessory-toggle'} onClick={() => update('toolbelt', !config.toolbelt)}>
+              <span>Ceinture à outils</span><strong>{config.toolbelt ? 'ON' : 'OFF'}</strong>
+            </button>
+            {config.gloves && (
+              <div className="inline-palette">
+                <span>Couleur des gants</span>
+                <Palette value={config.gloveColor} colors={['#E5A923', '#D35A42', '#202733', '#ECEAE5']} onChange={(color) => update('gloveColor', color)} />
+              </div>
+            )}
+          </section>
+        )}
 
-        <section className="control-section technical-card">
+        {activeSection === 'colors' && (
+          <section className="control-section first color-stack">
+            <div><h3>Peau</h3><Palette value={config.skinColor} colors={skinPalette} onChange={(color) => update('skinColor', color)} /></div>
+            <div><h3>Haut</h3><Palette value={config.topColor} colors={garmentPalette} onChange={(color) => update('topColor', color)} /></div>
+            <div><h3>Pantalon</h3><Palette value={config.pantsColor} colors={garmentPalette} onChange={(color) => update('pantsColor', color)} /></div>
+            <div><h3>Couvre-chef</h3><Palette value={config.headwearColor} colors={headwearPalette} onChange={(color) => update('headwearColor', color)} /></div>
+          </section>
+        )}
+
+        <section className="config-proof">
           <div>
-            <h3>Configuration prête pour V2</h3>
-            <p className="muted">Chaque choix est sauvegardé localement et sérialisable en JSON.</p>
+            <strong>Configurable, pas figé</strong>
+            <span>{config.morphology} · {config.topStyle} · {config.pantsStyle} · {config.headwear}</span>
           </div>
-          <div className="action-row">
-            <button className="primary-button" onClick={copyJson}>{copied ? 'JSON copié' : 'Copier le JSON'}</button>
-            <button className="ghost-button" onClick={() => setConfig(defaultAvatarConfig)}>Réinitialiser</button>
-          </div>
+          <button onClick={exportJson}>Copier JSON</button>
         </section>
       </aside>
     </main>
