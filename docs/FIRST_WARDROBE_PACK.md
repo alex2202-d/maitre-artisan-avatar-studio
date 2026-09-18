@@ -1,12 +1,26 @@
 # Premier pack vestiaire — Maître Artisan Avatar Studio
 
-Base officielle de travail : `Meshy_AI_Orange_Toy_Figure_0917125408_texture(1).glb`.
+Base visuelle maître : `Meshy_AI_Orange_Toy_Figure_0917125408_texture(1).glb`.
 
-Le GLB est la référence visuelle maître. Toute version technique ou tout nouvel asset doit conserver sa silhouette générale et sa direction artistique.
+Base technique optimisée : `model.glb`.
 
-## Règle de production
+Base riggée V1 : `rigged_character.glb`.
 
-On ne régénère plus le corps de base aujourd'hui. Les dépenses Meshy/Fal sont réservées aux assets qui apportent une vraie valeur au vestiaire. Les recolorations, teintes de peau et variantes simples ne doivent pas consommer de génération payante.
+Le master visuel reste la référence de silhouette et de direction artistique. La base riggée V1 est la fondation technique du vestiaire.
+
+## Règles de production — VERROUILLÉES
+
+Ces règles priment sur toute suggestion ultérieure tant que l'utilisateur ne demande pas explicitement de les modifier.
+
+- **Un seul asset à la fois.** Une génération Meshy/Fal ne doit produire qu'un asset nommé et identifié.
+- **Aucun mockup de pack.** Ne jamais générer une planche regroupant yeux, sourcils, bouches, vêtements ou accessoires, sauf demande explicite de l'utilisateur.
+- **Une référence 2D = un seul asset isolé.** Si une image 2D est créée pour Image-to-3D, elle doit représenter uniquement l'asset en cours, sans texte, sans grille, sans autres variantes et sans décor.
+- **Validation avant la suite.** On ne passe pas à l'asset suivant tant que l'asset courant n'a pas été contrôlé et validé.
+- **Pas de régénération du corps validé.** Le corps/master et la base riggée ne sont plus régénérés sauf défaut technique démontré ou décision explicite de l'utilisateur.
+- **Pas de dépense inutile.** Aucun nouvel essai payant du même asset avant analyse du résultat précédent.
+- **Variantes simples côté moteur.** Couleurs, teintes et matières simples doivent être paramétrées dans l'application plutôt que régénérées.
+- **Prompts limités à l'étape courante.** Quand un prompt est fourni, il concerne uniquement l'asset en production et aucun autre élément du pack.
+- **Modularité obligatoire.** Aucun nouvel élément de visage, cheveux, vêtement ou accessoire ne doit être fusionné définitivement au corps de base.
 
 ## Pack V1 — 10 assets prioritaires
 
@@ -24,7 +38,8 @@ On ne régénère plus le corps de base aujourd'hui. Les dépenses Meshy/Fal son
 ## Ordre strict
 
 ### Gate 1 — Visage modulaire
-Valider `face_eyes_01`, `face_brows_01` et `face_mouth_01` sur la tête lisse avant tout autre détail du visage.
+
+Valider `face_eyes_01`, puis `face_brows_01`, puis `face_mouth_01` sur la tête lisse.
 
 Critères :
 - aucun élément fusionné au corps ;
@@ -33,6 +48,7 @@ Critères :
 - rendu cohérent avec la référence maître.
 
 ### Gate 2 — Casque
+
 Produire `headwear_hardhat_01` et valider l'ancrage tête/casque.
 
 Critères :
@@ -41,7 +57,8 @@ Critères :
 - taille et silhouette cohérentes avec la DA.
 
 ### Gate 3 — Tenue chantier
-Produire veste, pantalon et chaussures.
+
+Produire séparément veste, pantalon et chaussures, avec validation entre chaque asset.
 
 Critères :
 - éléments séparés ;
@@ -50,16 +67,17 @@ Critères :
 - compatibilité avec le rig technique retenu.
 
 ### Gate 4 — Variantes
+
 Ajouter coiffure, bonnet et ceinture outils seulement après validation de la tenue chantier.
 
 ## Ce qui doit rester séparé
 
 Toujours séparés : visage, cheveux, haut, bas, chaussures, couvre-chef, accessoires.
 
-Le corps de base peut rester monobloc dans le master visuel. La copie technique devra être optimisée et riggée avant animation et industrialisation du catalogue.
+Le master visuel peut rester monobloc. La base technique riggée sert de fondation commune aux futurs assets.
 
 ## Budget
 
 Budget global utilisateur : 50 € maximum.
 
-Règle : ne jamais lancer plusieurs générations payantes d'un même asset sans avoir audité la précédente. Les variantes de couleur et matières simples doivent être réalisées côté moteur 3D et non régénérées.
+Ne jamais lancer plusieurs générations payantes d'un même asset sans avoir audité la précédente.
