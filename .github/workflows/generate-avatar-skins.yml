@@ -1,0 +1,32 @@
+name: Generate Avatar Skin Textures
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/generate-avatar-skins.yml'
+      - '.github/scripts/generate_skin_variants.py'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pillow
+        run: python -m pip install --quiet pillow
+      - name: Generate skin texture variants
+        run: python .github/scripts/generate_skin_variants.py
+      - name: Commit generated skin textures
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/avatar/v2/skins
+          if git diff --cached --quiet; then
+            echo 'No generated skin changes.'
+            exit 0
+          fi
+          git commit -m 'assets: generate avatar skin texture variants'
+          git push
