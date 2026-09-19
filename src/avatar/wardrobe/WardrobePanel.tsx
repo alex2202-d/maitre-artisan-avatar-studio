@@ -3,6 +3,7 @@ import type { ProductionAsset } from '../productionCatalog'
 import AvatarActions from './AvatarActions'
 import WardrobeCategories from './WardrobeCategories'
 import {
+  outfitOptions,
   skinTones,
   wardrobeCategories,
   type WardrobeCategoryId,
@@ -32,6 +33,7 @@ export default function WardrobePanel({
   onSave: () => void
 }) {
   const skinMode = activeCategory === 'skin'
+  const outfitMode = activeCategory === 'outfits'
 
   return (
     <aside className={expanded ? 'wardrobe-shell expanded' : 'wardrobe-shell'} aria-label="Vestiaire">
@@ -56,9 +58,9 @@ export default function WardrobePanel({
         <div className="wardrobe-heading">
           <div>
             <p className="eyebrow blue">VESTIAIRE V2</p>
-            <h2>{skinMode ? 'Teinte de peau' : selected.shortLabel}</h2>
+            <h2>{skinMode ? 'Teinte de peau' : outfitMode ? 'Tenues métier' : selected.shortLabel}</h2>
           </div>
-          <span className="ready-pill">{skinMode ? '5 TEINTES' : '3D'}</span>
+          <span className="ready-pill">{skinMode ? '5 TEINTES' : outfitMode ? '4 TENUES' : '3D'}</span>
         </div>
 
         {skinMode ? (
@@ -76,6 +78,28 @@ export default function WardrobePanel({
                 >
                   <span style={{ backgroundColor: tone.color }} />
                   <strong>{tone.label}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : outfitMode ? (
+          <section className="personalization-card">
+            <p>Choisis une tenue complète. Le modèle 3D change immédiatement sans quitter le vestiaire.</p>
+            <div className="outfit-grid" role="list" aria-label="Tenues métier">
+              {outfitOptions.map((outfit) => (
+                <button
+                  key={outfit.id}
+                  type="button"
+                  className={config.outfitId === outfit.id ? 'outfit-choice active' : 'outfit-choice'}
+                  onClick={() => onUpdateConfig({ outfitId: outfit.id })}
+                  aria-label={outfit.label}
+                  aria-pressed={config.outfitId === outfit.id}
+                >
+                  <span className="outfit-color" style={{ backgroundColor: outfit.color }} />
+                  <span className="outfit-copy">
+                    <strong>{outfit.label}</strong>
+                    <small>{outfit.description}</small>
+                  </span>
                 </button>
               ))}
             </div>
