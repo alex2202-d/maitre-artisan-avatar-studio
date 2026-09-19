@@ -1,25 +1,127 @@
 import { Suspense, useEffect, useMemo } from 'react'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import type { Mesh } from 'three'
+import { Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
 
-function ProductionModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url)
-  const model = useMemo(() => clone(scene), [scene])
+function createWardrobeMaterial(
+  material: Material,
+  topColor: string,
+  bottomColor: string,
+) {
+  const standard = material as MeshStandardMaterial
+  if (!standard.isMeshStandardMaterial) return material
 
-  useEffect(() => {
-    model.traverse((child) => {
+  const patched = standard.clone()
+  const top = new Color(topColor)
+  const bottom = new Color(bottomColor)
+
+  patched.onBeforeCompile = (shader) => {
+    shader.uniforms.avatarTopColor = { value: top }
+    shader.uniforms.avatarBottomColor = { value: bottom }
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vAvatarBindPosition;',
+      )
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvAvatarBindPosition = position;',
+      )
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 avatarTopColor;\nuniform vec3 avatarBottomColor;\nvarying vec3 vAvatarBindPosition;',
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        float r = diffuseColor.r;
+        float g = diffuseColor.g;
+        float b = diffuseColor.b;
+        float sourceLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+
+        bool navyFabric =
+          b > r + 0.018 &&
+          b >= g * 0.96 &&
+          r < 0.40 &&
+          g < 0.42 &&
+          b < 0.52 &&
+          sourceLuma < 0.36;
+
+        float y = vAvatarBindPosition.y;
+        bool bottomRegion = y >= 0.10 && y < 0.37;
+        bool topRegion = y >= 0.37 && y < 0.72;
+
+        if (navyFabric && (topRegion || bottomRegion)) {
+          vec3 targetColor = topRegion ? avatarTopColor : avatarBottomColor;
+          float preservedShade = clamp(sourceLuma / 0.16, 0.48, 1.45);
+          diffuseColor.rgb = clamp(targetColor * preservedShade, 0.0, 1.0);
+        }`,
+      )
+  }
+
+  patched.customProgramCacheKey = () =>
+    `ma-wardrobe-v1-${topColor}-${bottomColor}`
+  patched.needsUpdate = true
+  return patched
+}
+
+function ProductionModel({
+  url,
+  topColor,
+  bottomColor,
+}: {
+  url: string
+  topColor: string
+  bottomColor: string
+}) {
+  const { scene } = useGLTF(url)
+
+  const model = useMemo(() => {
+    const instance = clone(scene)
+
+    instance.traverse((child) => {
       const mesh = child as Mesh
-      if (mesh.isMesh) {
-        mesh.castShadow = true
-        mesh.receiveShadow = true
+      if (!mesh.isMesh) return
+
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map((material) =>
+          createWardrobeMaterial(material, topColor, bottomColor),
+        )
+      } else if (mesh.material) {
+        mesh.material = createWardrobeMaterial(
+          mesh.material,
+          topColor,
+          bottomColor,
+        )
       }
     })
+
+    return instance
+  }, [scene, topColor, bottomColor])
+
+  useEffect(() => {
+    return () => {
+      model.traverse((child) => {
+        const mesh = child as Mesh
+        if (!mesh.isMesh) return
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((material) => material.dispose())
+        } else {
+          mesh.material?.dispose()
+        }
+      })
+    }
   }, [model])
 
   return (
@@ -46,10 +148,14 @@ function LockCamera() {
 
 export default function AvatarScene({
   modelUrl,
+  topColor = '#172036',
+  bottomColor = '#172036',
 }: {
   modelUrl: string
   kind?: 'character' | 'piece'
   skinToneId?: string
+  topColor?: string
+  bottomColor?: string
 }) {
   return (
     <Canvas
@@ -74,7 +180,11 @@ export default function AvatarScene({
       <LockCamera />
 
       <Suspense fallback={null}>
-        <ProductionModel url={modelUrl} />
+        <ProductionModel
+          url={modelUrl}
+          topColor={topColor}
+          bottomColor={bottomColor}
+        />
       </Suspense>
 
       <OrbitControls
