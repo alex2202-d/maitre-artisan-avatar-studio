@@ -23,9 +23,10 @@ export default function App() {
     [selectedId],
   )
 
-  const skinModelUrl = useMemo(
-    () => `/assets/avatar/v2/skins/avatar_workwear_v2_${config.skinToneId}.glb`,
-    [config.skinToneId],
+  const avatarModelUrl = useMemo(
+    () =>
+      `/assets/avatar/v2/outfits/${config.outfitId}/avatar_${config.outfitId}_${config.skinToneId}.glb`,
+    [config.outfitId, config.skinToneId],
   )
 
   function selectCategory(id: WardrobeCategoryId) {
@@ -112,7 +113,7 @@ export default function App() {
         <header className="desktop-topbar">
           <div>
             <p className="eyebrow">AVATAR STUDIO — V2</p>
-            <h1>{activeCategory === 'skin' ? 'Teinte de peau' : selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
+            <h1>{activeCategory === 'skin' ? 'Teinte de peau' : activeCategory === 'outfits' ? 'Tenues métier' : selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
           </div>
           <button className="toolbar-button primary" type="button" onClick={handleSave}>
             Valider mon avatar
@@ -127,8 +128,8 @@ export default function App() {
           </div>
 
           <AvatarScene
-            key={skinModelUrl}
-            modelUrl={skinModelUrl}
+            key={avatarModelUrl}
+            modelUrl={avatarModelUrl}
             kind="character"
           />
 
@@ -136,7 +137,7 @@ export default function App() {
             <span className="status-dot" />
             <div>
               <strong>PERSONNAGE RIGGÉ</strong>
-              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : 'Aperçu sur avatar'}</span>
+              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : activeCategory === 'outfits' ? 'Tenue appliquée en 3D' : 'Aperçu sur avatar'}</span>
             </div>
           </div>
 
