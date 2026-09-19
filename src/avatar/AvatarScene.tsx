@@ -124,7 +124,7 @@ export default function AvatarScene({
       <directionalLight intensity={0.75} position={[1, 4, -4]} color="#fff0dc" />
 
       <Suspense fallback={null}>
-        <Bounds fit clip observe margin={1.18}>
+        <Bounds fit clip observe margin={3.4}>
           <Center bottom>
             <ProductionModel url={modelUrl} skinColor={skinColor} />
           </Center>
