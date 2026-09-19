@@ -1,47 +1,32 @@
 import { useMemo, useState } from 'react'
 import AvatarScene from './avatar/AvatarScene'
+import { productionCharacter } from './avatar/productionCatalog'
+import { useAvatarConfig } from './avatar/wardrobe/useAvatarConfig'
+import WardrobeCategories from './avatar/wardrobe/WardrobeCategories'
+import WardrobePanel from './avatar/wardrobe/WardrobePanel'
 import {
-  outfit01,
-  outfit01Assets,
-  productionAssets,
-  productionCharacter,
-  type ProductionAsset,
-} from './avatar/productionCatalog'
-
-function AssetCard({
-  asset,
-  active,
-  onSelect,
-}: {
-  asset: ProductionAsset
-  active: boolean
-  onSelect: (asset: ProductionAsset) => void
-}) {
-  return (
-    <button className={active ? 'asset-card active' : 'asset-card'} onClick={() => onSelect(asset)}>
-      <div className="asset-thumb">
-        <img src={asset.previewUrl} alt="" loading="lazy" />
-      </div>
-      <div className="asset-card-copy">
-        <span>{asset.category}</span>
-        <strong>{asset.shortLabel}</strong>
-      </div>
-      <span className="asset-state">{active ? 'VISIBLE' : '3D'}</span>
-    </button>
-  )
-}
+  wardrobeAssetById,
+  wardrobeCategories,
+  type WardrobeCategoryId,
+} from './avatar/wardrobe/wardrobeCatalog'
 
 export default function App() {
+  const [activeCategory, setActiveCategory] = useState<WardrobeCategoryId>('character')
   const [selectedId, setSelectedId] = useState(productionCharacter.id)
+  const [sheetExpanded, setSheetExpanded] = useState(true)
   const [message, setMessage] = useState('')
+  const { reset, randomize, save } = useAvatarConfig()
 
   const selected = useMemo(
-    () => productionAssets.find((asset) => asset.id === selectedId) ?? productionCharacter,
+    () => wardrobeAssetById.get(selectedId) ?? productionCharacter,
     [selectedId],
   )
 
-  function selectAsset(asset: ProductionAsset) {
-    setSelectedId(asset.id)
+  function selectCategory(id: WardrobeCategoryId) {
+    setActiveCategory(id)
+    const category = wardrobeCategories.find((item) => item.id === id)
+    if (category) setSelectedId(category.assetId)
+    setSheetExpanded(true)
   }
 
   function notify(text: string) {
@@ -49,9 +34,28 @@ export default function App() {
     window.setTimeout(() => setMessage(''), 1800)
   }
 
+  function handleReset() {
+    reset()
+    setActiveCategory('character')
+    setSelectedId(productionCharacter.id)
+    notify('Avatar réinitialisé')
+  }
+
+  function handleRandomize() {
+    randomize()
+    setActiveCategory('character')
+    setSelectedId(productionCharacter.id)
+    notify('Configuration préparée')
+  }
+
+  function handleSave() {
+    save()
+    notify('Avatar enregistré')
+  }
+
   return (
-    <main className="studio-layout production-studio">
-      <aside className="sidebar">
+    <main className="wardrobe-app">
+      <aside className="desktop-sidebar">
         <div className="brand-block">
           <div className="brand-mark">MA</div>
           <div>
@@ -60,48 +64,46 @@ export default function App() {
           </div>
         </div>
 
-        <div className="collection-label">TENUE V2</div>
-        <nav className="studio-nav" aria-label="Éléments du vestiaire">
-          {productionAssets.map((asset) => (
-            <button
-              key={asset.id}
-              className={selected.id === asset.id ? 'nav-item active' : 'nav-item'}
-              onClick={() => selectAsset(asset)}
-            >
-              <span className="nav-icon">{asset.icon}</span>
-              <span>{asset.shortLabel}</span>
-            </button>
-          ))}
-        </nav>
+        <p className="collection-label">VESTIAIRE V2</p>
+        <WardrobeCategories
+          categories={wardrobeCategories}
+          activeId={activeCategory}
+          onSelect={selectCategory}
+          className="desktop-categories"
+        />
 
         <div className="production-badge">
           <span className="status-dot" />
           <div>
-            <strong>Pack 3D V2 installé</strong>
-            <span>1 avatar · {outfit01Assets.length} modules</span>
+            <strong>Pack final installé</strong>
+            <span>1 avatar · 5 modules 3D</span>
           </div>
         </div>
       </aside>
 
-      <section className="viewer-column">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">PERSONNAGE PRODUCTION — V2</p>
-            <h1>{selected.kind === 'character' ? 'Tenue chantier V2' : selected.label}</h1>
+      <section className="avatar-workspace">
+        <header className="mobile-topbar">
+          <div className="mobile-brand">
+            <span>MA</span>
+            <div>
+              <strong>Maître Artisan</strong>
+              <small>Mon avatar</small>
+            </div>
           </div>
-          <div className="top-actions">
-            {selected.kind === 'piece' && (
-              <button className="toolbar-button primary" onClick={() => setSelectedId(productionCharacter.id)}>
-                Voir le personnage
-              </button>
-            )}
-            <button className="toolbar-button" onClick={() => notify('Pack 3D V2 chargé depuis le vestiaire')}>
-              ✓ Pack V2 prêt
-            </button>
-          </div>
+          <button type="button" onClick={handleReset}>Réinitialiser</button>
         </header>
 
-        <div className="viewer-stage production-viewer">
+        <header className="desktop-topbar">
+          <div>
+            <p className="eyebrow">AVATAR STUDIO — V2</p>
+            <h1>{selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
+          </div>
+          <button className="toolbar-button primary" type="button" onClick={handleSave}>
+            Valider mon avatar
+          </button>
+        </header>
+
+        <div className="avatar-stage">
           <div className="stage-copy">
             <span>Ton métier.</span>
             <span>Ton avatar.</span>
@@ -113,81 +115,26 @@ export default function App() {
           <div className="model-chip">
             <span className="status-dot" />
             <div>
-              <strong>{selected.kind === 'character' ? 'PERSONNAGE FINAL RIGGÉ' : 'MODULE 3D V2'}</strong>
+              <strong>{selected.kind === 'character' ? 'PERSONNAGE RIGGÉ' : 'MODULE 3D'}</strong>
               <span>{selected.shortLabel}</span>
             </div>
           </div>
 
-          <div className="viewer-hint">Glisse pour tourner · pince/molette pour zoomer</div>
+          <div className="viewer-hint">Glisse pour tourner · pince pour zoomer</div>
           {message && <div className="toast">{message}</div>}
         </div>
       </section>
 
-      <aside className="wardrobe-panel light-panel">
-        <div className="wardrobe-heading">
-          <div>
-            <p className="eyebrow blue">VESTIAIRE PRODUCTION</p>
-            <h2>{outfit01.label}</h2>
-          </div>
-          <span className="ready-pill">PRÊT</span>
-        </div>
-
-        <section className="hero-asset">
-          <div className="hero-preview">
-            <img src={selected.previewUrl} alt={'Aperçu ' + selected.label} />
-          </div>
-          <div className="hero-meta">
-            <span>{selected.category}</span>
-            <h3>{selected.label}</h3>
-            <p>{selected.description}</p>
-          </div>
-          <div className="technical-row">
-            <span>GLB réel</span>
-            <span>{selected.kind === 'character' ? 'Riggé' : 'Séparé'}</span>
-            <span>PBR / texture</span>
-          </div>
-        </section>
-
-        <section className="wardrobe-section">
-          <div className="section-heading">
-            <div>
-              <span>PACK V2</span>
-              <h3>Tenue finale</h3>
-            </div>
-            <strong>{outfit01Assets.length} modules</strong>
-          </div>
-
-          <div className="asset-list">
-            {outfit01Assets.map((asset) => (
-              <AssetCard
-                key={asset.id}
-                asset={asset}
-                active={selected.id === asset.id}
-                onSelect={selectAsset}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="outfit-proof">
-          <div className="outfit-proof-title">
-            <span className="status-dot" />
-            <strong>Pack final V2 disponible</strong>
-          </div>
-          <p>
-            Le personnage complet utilise le modèle final riggé V2. Les cinq éléments du vestiaire sont conservés
-            comme assets 3D séparés à partir de la direction artistique validée.
-          </p>
-          <button onClick={() => setSelectedId(productionCharacter.id)}>Afficher le personnage final</button>
-        </section>
-
-        <section className="production-info">
-          <span>Identifiant</span>
-          <strong>{outfit01.id}</strong>
-          <span>Base</span>
-          <strong>avatar_workwear_v2_rigged.glb</strong>
-        </section>
-      </aside>
+      <WardrobePanel
+        selected={selected}
+        activeCategory={activeCategory}
+        expanded={sheetExpanded}
+        onToggleExpanded={() => setSheetExpanded((value) => !value)}
+        onSelectCategory={selectCategory}
+        onReset={handleReset}
+        onRandomize={handleRandomize}
+        onSave={handleSave}
+      />
     </main>
   )
 }
