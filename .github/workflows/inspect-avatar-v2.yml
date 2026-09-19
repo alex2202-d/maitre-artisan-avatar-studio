@@ -1,0 +1,16 @@
+name: Inspect Avatar V2 GLB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-avatar-v2.yml'
+      - '.github/scripts/inspect-glb.mjs'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect rigged avatar structure
+        run: node .github/scripts/inspect-glb.mjs public/assets/avatar/v2/base/avatar_workwear_v2_rigged.glb
