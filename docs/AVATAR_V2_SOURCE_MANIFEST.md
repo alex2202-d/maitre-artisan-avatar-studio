@@ -16,3 +16,8 @@ Final V2 pack generated from the approved Maître Artisan visual direction and i
 - Boots: `01a0ba74-e732-75d2-b067-00302e4d423a`
 
 The one-shot workflow `.github/workflows/vendor-avatar-v2.yml` downloads the generated binaries into the repository so the app does not depend on remote model URLs at runtime.
+
+## Integration
+- V2 application integration commit: `dfa0cc4542cd6b7f714224cc6b6b2e5057dc4644`
+- Vendored binary asset commit: `3259f98db255c4c05157bd83d51146411a8bbace`
+- Runtime catalog points only to local `/assets/avatar/v2/` files.
