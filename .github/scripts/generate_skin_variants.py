@@ -13,12 +13,11 @@ OUT = ROOT / "public/assets/avatar/v2/skins"
 OUT.mkdir(parents=True, exist_ok=True)
 
 TONES = {
-    # Deliberately spaced apart so every choice is immediately visible.
-    "skin-light": (247, 216, 198),        # #F7D8C6
-    "skin-light-medium": (222, 170, 132), # #DEAA84
-    "skin-medium": (184, 112, 78),        # #B8704E
-    "skin-tan": (124, 76, 53),            # #7C4C35
-    "skin-dark": (63, 39, 30),            # #3F271E
+    "skin-light": (231, 199, 174),        # #E7C7AE
+    "skin-light-medium": (216, 165, 130), # #D8A582
+    "skin-medium": (188, 127, 88),        # #BC7F58
+    "skin-tan": (142, 93, 63),            # #8E5D3F
+    "skin-dark": (95, 53, 38),            # #5F3526
 }
 
 def read_glb(path: Path):
