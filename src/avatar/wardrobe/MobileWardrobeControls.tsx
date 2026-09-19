@@ -1,5 +1,6 @@
 import type { AvatarConfigV2 } from './avatarConfig'
 import {
+  outfitOptions,
   skinTones,
   wardrobeCategories,
   type WardrobeCategoryId,
@@ -76,6 +77,22 @@ export default function MobileWardrobeControls({
               >
                 <span style={{ backgroundColor: tone.color }} />
                 <small>{tone.label}</small>
+              </button>
+            ))}
+          </div>
+        ) : activeCategory === 'outfits' ? (
+          <div className="mobile-outfit-strip" aria-label="Tenues métier">
+            {outfitOptions.map((outfit) => (
+              <button
+                key={outfit.id}
+                type="button"
+                className={config.outfitId === outfit.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
+                onClick={() => onUpdateConfig({ outfitId: outfit.id })}
+                aria-label={outfit.label}
+                aria-pressed={config.outfitId === outfit.id}
+              >
+                <span style={{ backgroundColor: outfit.color }} />
+                <small>{outfit.label}</small>
               </button>
             ))}
           </div>
