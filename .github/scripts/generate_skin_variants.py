@@ -80,6 +80,57 @@ def is_skin_pixel(r, g, b, a):
         and 133 <= cr <= 178
     )
 
+def encode_png(image):
+    out = io.BytesIO()
+    image.save(out, format="PNG", optimize=True)
+    return out.getvalue()
+
+def write_glb_with_basecolor(gltf, bin_chunk, png_bytes, dest):
+    # Keep geometry, rig and all original data untouched. Append a new embedded
+    # baseColor image to the BIN chunk and point the material texture at it.
+    import copy
+    model = copy.deepcopy(gltf)
+
+    bin_data = bytearray(bin_chunk)
+    while len(bin_data) % 4:
+        bin_data.append(0)
+
+    image_offset = len(bin_data)
+    bin_data.extend(png_bytes)
+    raw_bin_length = len(bin_data)
+    while len(bin_data) % 4:
+        bin_data.append(0)
+
+    new_view = {
+        "buffer": 0,
+        "byteOffset": image_offset,
+        "byteLength": len(png_bytes),
+    }
+    model.setdefault("bufferViews", []).append(new_view)
+    new_view_index = len(model["bufferViews"]) - 1
+
+    mat = model["materials"][0]
+    tex_index = mat["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+    image_index = model["textures"][tex_index]["source"]
+    model["images"][image_index]["bufferView"] = new_view_index
+    model["images"][image_index]["mimeType"] = "image/png"
+    model["images"][image_index].pop("uri", None)
+
+    model["buffers"][0]["byteLength"] = raw_bin_length
+
+    json_bytes = json.dumps(model, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    while len(json_bytes) % 4:
+        json_bytes += b" "
+
+    total_length = 12 + 8 + len(json_bytes) + 8 + len(bin_data)
+
+    with open(dest, "wb") as f:
+        f.write(struct.pack("<4sII", b"glTF", 2, total_length))
+        f.write(struct.pack("<II", len(json_bytes), 0x4E4F534A))
+        f.write(json_bytes)
+        f.write(struct.pack("<II", len(bin_data), 0x004E4942))
+        f.write(bin_data)
+
 def make_variant(source, target):
     img = source.copy()
     px = img.load()
@@ -127,10 +178,15 @@ def main():
     report = []
     for name, target in TONES.items():
         variant, mask, changed = make_variant(source, target)
-        variant.save(OUT / f"{name}.png", optimize=True)
+        png_path = OUT / f"{name}.png"
+        variant.save(png_path, optimize=True)
+
+        glb_path = OUT / f"avatar_workwear_v2_{name}.glb"
+        write_glb_with_basecolor(gltf, bin_chunk, encode_png(variant), glb_path)
+
         if master_mask is None:
             master_mask = mask
-        report.append(f"{name}: {changed} pixels")
+        report.append(f"{name}: {changed} pixels -> avatar_workwear_v2_{name}.glb")
 
     master_mask.save(OUT / "skin-mask.png", optimize=True)
     (OUT / "README.txt").write_text(
