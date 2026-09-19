@@ -13,11 +13,12 @@ OUT = ROOT / "public/assets/avatar/v2/skins"
 OUT.mkdir(parents=True, exist_ok=True)
 
 TONES = {
-    "skin-light": (241, 210, 188),
-    "skin-light-medium": (215, 173, 139),
-    "skin-medium": (188, 134, 101),
-    "skin-tan": (135, 88, 63),
-    "skin-dark": (86, 54, 37),
+    # Deliberately spaced apart so every choice is immediately visible.
+    "skin-light": (247, 216, 198),        # #F7D8C6
+    "skin-light-medium": (222, 170, 132), # #DEAA84
+    "skin-medium": (184, 112, 78),        # #B8704E
+    "skin-tan": (124, 76, 53),            # #7C4C35
+    "skin-dark": (63, 39, 30),            # #3F271E
 }
 
 def read_glb(path: Path):
@@ -96,11 +97,17 @@ def make_variant(source, target):
                 continue
 
             src_luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-            # Preserve lighting and texture relief from the original skin.
-            shade = max(0.52, min(1.30, src_luma / 0.74))
-            # Slightly compress highlight range for dark tones.
-            if target_luma < 0.35:
-                shade = max(0.62, min(1.18, shade))
+
+            # The selected tone must dominate. We only keep a restrained amount
+            # of the original lighting so "Clair" and "Foncé" stay clearly distinct.
+            detail = max(-0.16, min(0.14, (src_luma - 0.72) * 0.55))
+            shade = 1.0 + detail
+
+            # Dark tones must not be washed out by bright highlights.
+            if target_luma < 0.30:
+                shade = max(0.88, min(1.08, shade))
+            elif target_luma < 0.45:
+                shade = max(0.86, min(1.11, shade))
 
             nr = int(max(0, min(255, target[0] * shade)))
             ng = int(max(0, min(255, target[1] * shade)))
