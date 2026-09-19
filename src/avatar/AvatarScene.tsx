@@ -4,7 +4,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { Mesh } from 'three'
 
-const AVATAR_ROOT_SCALE = 100
+const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
 
