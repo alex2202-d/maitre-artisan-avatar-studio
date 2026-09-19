@@ -7,6 +7,7 @@ import {
 export type WardrobeCategoryId =
   | 'character'
   | 'skin'
+  | 'outfits'
   | 'headwear'
   | 'top'
   | 'bottom'
@@ -23,6 +24,7 @@ export type WardrobeCategory = {
 export const wardrobeCategories: WardrobeCategory[] = [
   { id: 'character', label: 'Avatar', icon: '●', assetId: productionCharacter.id },
   { id: 'skin', label: 'Peau', icon: '◉', assetId: productionCharacter.id },
+  { id: 'outfits', label: 'Tenues', icon: '◆', assetId: productionCharacter.id },
   { id: 'headwear', label: 'Casque', icon: '⌒', assetId: 'headwear-hardhat-v2' },
   { id: 'top', label: 'Haut', icon: '▣', assetId: 'top-workwear-v2' },
   { id: 'bottom', label: 'Bas', icon: '▥', assetId: 'bottom-workshort-v2' },
@@ -55,4 +57,32 @@ export const plannedHairStyles = [
   { id: 'hair-short', label: 'Court' },
   { id: 'hair-tuft', label: 'Mèche' },
   { id: 'hair-side', label: 'Côté' },
+] as const
+
+
+export const outfitOptions = [
+  {
+    id: 'outfit-chantier',
+    label: 'Chantier',
+    description: 'Tenue chantier marine avec accents orange.',
+    color: '#172036',
+  },
+  {
+    id: 'outfit-electricien',
+    label: 'Électricien',
+    description: 'Tenue technique anthracite avec accents orange.',
+    color: '#2A2C32',
+  },
+  {
+    id: 'outfit-plombier',
+    label: 'Plombier',
+    description: 'Tenue de travail bleue avec accents orange.',
+    color: '#264E84',
+  },
+  {
+    id: 'outfit-peintre',
+    label: 'Peintre',
+    description: 'Tenue de travail claire avec accents orange.',
+    color: '#E0DED8',
+  },
 ] as const
