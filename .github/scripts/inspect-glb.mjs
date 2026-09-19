@@ -21,49 +21,49 @@ while (offset < buffer.length) {
 }
 if (!json) throw new Error('JSON chunk not found')
 
-const summary = {
-  asset: json.asset,
-  scenes: json.scenes?.length ?? 0,
-  nodes: (json.nodes ?? []).map((node, index) => ({
-    index,
-    name: node.name ?? null,
-    mesh: node.mesh ?? null,
-    skin: node.skin ?? null,
-    children: node.children ?? [],
-  })),
-  meshes: (json.meshes ?? []).map((mesh, index) => ({
-    index,
-    name: mesh.name ?? null,
-    primitives: (mesh.primitives ?? []).map((primitive, pIndex) => ({
-      index: pIndex,
-      material: primitive.material ?? null,
-      mode: primitive.mode ?? 4,
-      attributes: Object.keys(primitive.attributes ?? {}),
-    })),
-  })),
-  materials: (json.materials ?? []).map((material, index) => ({
-    index,
-    name: material.name ?? null,
-    baseColorFactor: material.pbrMetallicRoughness?.baseColorFactor ?? null,
-    baseColorTexture: material.pbrMetallicRoughness?.baseColorTexture?.index ?? null,
-    metallicFactor: material.pbrMetallicRoughness?.metallicFactor ?? null,
-    roughnessFactor: material.pbrMetallicRoughness?.roughnessFactor ?? null,
-    normalTexture: material.normalTexture?.index ?? null,
-  })),
-  textures: json.textures?.length ?? 0,
-  images: (json.images ?? []).map((image, index) => ({
-    index,
-    name: image.name ?? null,
-    mimeType: image.mimeType ?? null,
-    uri: image.uri ?? null,
-    bufferView: image.bufferView ?? null,
-  })),
-  skins: (json.skins ?? []).map((skin, index) => ({
-    index,
-    name: skin.name ?? null,
-    joints: skin.joints?.length ?? 0,
-    skeleton: skin.skeleton ?? null,
-  })),
-}
+const accessors = json.accessors ?? []
+const nodes = json.nodes ?? []
+const meshes = json.meshes ?? []
 
-console.log(JSON.stringify(summary, null, 2))
+console.log('=== MESH POSITION BOUNDS ===')
+meshes.forEach((mesh, mi) => {
+  ;(mesh.primitives ?? []).forEach((primitive, pi) => {
+    const posAccessorIndex = primitive.attributes?.POSITION
+    const acc = accessors[posAccessorIndex]
+    console.log(JSON.stringify({
+      meshIndex: mi,
+      meshName: mesh.name ?? null,
+      primitiveIndex: pi,
+      positionAccessor: posAccessorIndex,
+      min: acc?.min ?? null,
+      max: acc?.max ?? null,
+      count: acc?.count ?? null,
+      material: primitive.material ?? null,
+    }))
+  })
+})
+
+console.log('=== NODE TRANSFORMS ===')
+nodes.forEach((node, i) => {
+  if (node.mesh !== undefined || node.skin !== undefined || node.name === 'Armature' || node.name === 'world') {
+    console.log(JSON.stringify({
+      index:i,
+      name:node.name ?? null,
+      mesh:node.mesh ?? null,
+      skin:node.skin ?? null,
+      translation:node.translation ?? null,
+      rotation:node.rotation ?? null,
+      scale:node.scale ?? null,
+      matrix:node.matrix ?? null,
+      children:node.children ?? null
+    }))
+  }
+})
+
+console.log('=== SUMMARY ===')
+console.log(JSON.stringify({
+  scenes: json.scenes,
+  scene: json.scene,
+  skins: (json.skins ?? []).map((s,i)=>({index:i,name:s.name ?? null,skeleton:s.skeleton ?? null,joints:s.joints?.length ?? 0})),
+  materials:(json.materials ?? []).map((m,i)=>({index:i,name:m.name ?? null})),
+}, null, 2))
