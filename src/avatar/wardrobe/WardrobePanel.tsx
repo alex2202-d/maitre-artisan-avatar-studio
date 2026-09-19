@@ -3,8 +3,9 @@ import type { ProductionAsset } from '../productionCatalog'
 import AvatarActions from './AvatarActions'
 import WardrobeCategories from './WardrobeCategories'
 import {
-  outfitOptions,
+  bottomOptions,
   skinTones,
+  topOptions,
   wardrobeCategories,
   type WardrobeCategoryId,
 } from './wardrobeCatalog'
@@ -33,7 +34,8 @@ export default function WardrobePanel({
   onSave: () => void
 }) {
   const skinMode = activeCategory === 'skin'
-  const outfitMode = activeCategory === 'outfits'
+  const topMode = activeCategory === 'top'
+  const bottomMode = activeCategory === 'bottom'
 
   return (
     <aside className={expanded ? 'wardrobe-shell expanded' : 'wardrobe-shell'} aria-label="Vestiaire">
@@ -58,9 +60,9 @@ export default function WardrobePanel({
         <div className="wardrobe-heading">
           <div>
             <p className="eyebrow blue">VESTIAIRE V2</p>
-            <h2>{skinMode ? 'Teinte de peau' : outfitMode ? 'Tenues métier' : selected.shortLabel}</h2>
+            <h2>{skinMode ? 'Teinte de peau' : topMode ? 'Hauts' : bottomMode ? 'Bas' : selected.shortLabel}</h2>
           </div>
-          <span className="ready-pill">{skinMode ? '5 TEINTES' : outfitMode ? '4 TENUES' : '3D'}</span>
+          <span className="ready-pill">{skinMode ? '5 TEINTES' : topMode || bottomMode ? '4 CHOIX' : '3D'}</span>
         </div>
 
         {skinMode ? (
@@ -82,23 +84,45 @@ export default function WardrobePanel({
               ))}
             </div>
           </section>
-        ) : outfitMode ? (
+        ) : topMode ? (
           <section className="personalization-card">
-            <p>Choisis une tenue complète. Le modèle 3D change immédiatement sans quitter le vestiaire.</p>
-            <div className="outfit-grid" role="list" aria-label="Tenues métier">
-              {outfitOptions.map((outfit) => (
+            <p>Choisis le haut indépendamment du bas.</p>
+            <div className="outfit-grid" role="list" aria-label="Hauts">
+              {topOptions.map((item) => (
                 <button
-                  key={outfit.id}
+                  key={item.id}
                   type="button"
-                  className={config.outfitId === outfit.id ? 'outfit-choice active' : 'outfit-choice'}
-                  onClick={() => onUpdateConfig({ outfitId: outfit.id })}
-                  aria-label={outfit.label}
-                  aria-pressed={config.outfitId === outfit.id}
+                  className={config.outfit.topId === item.id ? 'outfit-choice active' : 'outfit-choice'}
+                  onClick={() => onUpdateConfig({ outfit: { ...config.outfit, topId: item.id } })}
+                  aria-label={item.label}
+                  aria-pressed={config.outfit.topId === item.id}
                 >
-                  <span className="outfit-color" style={{ backgroundColor: outfit.color }} />
+                  <span className="outfit-color" style={{ backgroundColor: item.color }} />
                   <span className="outfit-copy">
-                    <strong>{outfit.label}</strong>
-                    <small>{outfit.description}</small>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : bottomMode ? (
+          <section className="personalization-card">
+            <p>Choisis le bas indépendamment du haut.</p>
+            <div className="outfit-grid" role="list" aria-label="Bas">
+              {bottomOptions.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={config.outfit.bottomId === item.id ? 'outfit-choice active' : 'outfit-choice'}
+                  onClick={() => onUpdateConfig({ outfit: { ...config.outfit, bottomId: item.id } })}
+                  aria-label={item.label}
+                  aria-pressed={config.outfit.bottomId === item.id}
+                >
+                  <span className="outfit-color" style={{ backgroundColor: item.color }} />
+                  <span className="outfit-copy">
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
                   </span>
                 </button>
               ))}
