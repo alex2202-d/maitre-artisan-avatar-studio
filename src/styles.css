@@ -378,8 +378,8 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
   .desktop-topbar { display: none; }
 
   .avatar-workspace {
-    min-height: 100svh;
-    height: 100svh;
+    min-height: 0;
+    height: 60svh;
     padding: 0;
     background: #1d293d;
   }
@@ -431,26 +431,24 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
 
   .avatar-stage {
     min-height: 0;
-    height: calc(100svh - 62px);
-    flex: 1;
+    height: calc(60svh - 62px);
+    flex: 0 0 auto;
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
   .stage-copy {
-    top: 22px;
-    left: 18px;
-    font-size: 16px;
+    display: none;
   }
   .viewer-hint {
-    bottom: 154px;
+    bottom: 12px;
     max-width: calc(100% - 28px);
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .model-chip {
     left: 12px;
-    bottom: 151px;
+    bottom: 12px;
     min-width: 126px;
     padding: 8px 10px;
   }
@@ -461,33 +459,21 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
     z-index: 20;
     left: 0;
     right: 0;
+    top: 60svh;
     bottom: 0;
     min-height: 0;
-    max-height: min(48svh, 430px);
-    padding: 0 12px max(12px, env(safe-area-inset-bottom));
+    height: 40svh;
+    max-height: none;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom));
     overflow: hidden;
     border: 1px solid rgba(12,28,50,.1);
     border-radius: 24px 24px 0 0;
     background: rgba(249,251,254,.985);
     box-shadow: 0 -16px 42px rgba(11,23,42,.22);
-    transition: transform .24s ease;
-  }
-  .wardrobe-shell:not(.expanded) {
-    transform: translateY(calc(100% - 134px));
+    transform: none !important;
   }
   .sheet-handle {
-    width: 100%;
-    height: 24px;
-    display: grid;
-    place-items: center;
-    border: 0;
-    background: transparent;
-  }
-  .sheet-handle span {
-    width: 42px;
-    height: 4px;
-    border-radius: 999px;
-    background: #bcc5d2;
+    display: none;
   }
 
   .mobile-category-strip { display: block; }
@@ -521,7 +507,7 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
   }
 
   .wardrobe-panel-content {
-    max-height: calc(min(48svh, 430px) - 88px);
+    max-height: calc(40svh - 82px);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 4px 2px 2px;
@@ -574,7 +560,7 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
 @media (max-width: 390px) {
   .wardrobe-category { min-width: 70px; }
   .viewer-hint { font-size: 9px; }
-  .model-chip { bottom: 148px; }
+  .model-chip { bottom: 12px; }
 }
 
 

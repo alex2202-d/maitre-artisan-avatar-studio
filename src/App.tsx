@@ -117,16 +117,16 @@ export default function App() {
           </div>
 
           <AvatarScene
-            modelUrl={selected.modelUrl}
-            kind={selected.kind}
+            modelUrl={productionCharacter.modelUrl}
+            kind="character"
             skinColor={skinColor}
           />
 
           <div className="model-chip">
             <span className="status-dot" />
             <div>
-              <strong>{selected.kind === 'character' ? 'PERSONNAGE RIGGÉ' : 'MODULE 3D'}</strong>
-              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : selected.shortLabel}</span>
+              <strong>PERSONNAGE RIGGÉ</strong>
+              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : 'Aperçu sur avatar'}</span>
             </div>
           </div>
 

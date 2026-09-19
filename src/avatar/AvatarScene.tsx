@@ -121,14 +121,14 @@ function FramedModel({
   const margin =
     kind === 'character'
       ? mobile
-        ? 2.15
+        ? 1.55
         : 1.28
       : mobile
         ? 1.85
         : 1.5
 
   return (
-    <Bounds fit clip observe margin={margin}>
+    <Bounds fit clip observe={false} margin={margin}>
       <Center bottom>
         <ProductionModel
           url={modelUrl}
@@ -153,7 +153,7 @@ export default function AvatarScene({
     <Canvas
       shadows
       dpr={[1, 1.75]}
-      camera={{ position: [2.2, 1.8, 4.8], fov: 34, near: 0.01, far: 100 }}
+      camera={{ position: [0, 1.4, 6], fov: 34, near: 0.01, far: 100 }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#E7E3E0']} />
@@ -177,8 +177,10 @@ export default function AvatarScene({
         makeDefault
         enablePan={false}
         enableZoom={false}
-        minPolarAngle={Math.PI * 0.12}
-        maxPolarAngle={Math.PI * 0.82}
+        enableDamping
+        dampingFactor={0.08}
+        minPolarAngle={Math.PI / 2}
+        maxPolarAngle={Math.PI / 2}
       />
     </Canvas>
   )
