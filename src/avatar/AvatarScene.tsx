@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo } from 'react'
-import { Bounds, Center, ContactShadows, OrbitControls, useGLTF } from '@react-three/drei'
+import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { Mesh } from 'three'
@@ -35,7 +35,7 @@ export default function AvatarScene({
       camera={{ position: [2.2, 1.8, 4.8], fov: 34, near: 0.01, far: 100 }}
       gl={{ antialias: true, alpha: false }}
     >
-      <color attach="background" args={['#E9E9E7']} />
+      <color attach="background" args={['#E7E3E0']} />
       <ambientLight intensity={1.8} />
       <hemisphereLight args={['#ffffff', '#c9c0b6', 1.45]} />
       <directionalLight
@@ -55,15 +55,6 @@ export default function AvatarScene({
           </Center>
         </Bounds>
       </Suspense>
-
-      <ContactShadows
-        position={[0, -0.015, 0]}
-        opacity={0.34}
-        scale={7}
-        blur={2.5}
-        far={5}
-        resolution={512}
-      />
 
       <OrbitControls
         makeDefault
