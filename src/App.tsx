@@ -5,6 +5,7 @@ import { useAvatarConfig } from './avatar/wardrobe/useAvatarConfig'
 import WardrobeCategories from './avatar/wardrobe/WardrobeCategories'
 import WardrobePanel from './avatar/wardrobe/WardrobePanel'
 import {
+  skinTones,
   wardrobeAssetById,
   wardrobeCategories,
   type WardrobeCategoryId,
@@ -15,11 +16,16 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(productionCharacter.id)
   const [sheetExpanded, setSheetExpanded] = useState(true)
   const [message, setMessage] = useState('')
-  const { reset, randomize, save } = useAvatarConfig()
+  const { config, update, reset, randomize, save } = useAvatarConfig()
 
   const selected = useMemo(
     () => wardrobeAssetById.get(selectedId) ?? productionCharacter,
     [selectedId],
+  )
+
+  const skinColor = useMemo(
+    () => skinTones.find((tone) => tone.id === config.skinToneId)?.color ?? skinTones[2].color,
+    [config.skinToneId],
   )
 
   function selectCategory(id: WardrobeCategoryId) {
@@ -45,7 +51,7 @@ export default function App() {
     randomize()
     setActiveCategory('character')
     setSelectedId(productionCharacter.id)
-    notify('Configuration préparée')
+    notify('Nouvelle combinaison')
   }
 
   function handleSave() {
@@ -76,7 +82,7 @@ export default function App() {
           <span className="status-dot" />
           <div>
             <strong>Pack final installé</strong>
-            <span>1 avatar · 5 modules 3D</span>
+            <span>Avatar · peau · 5 modules 3D</span>
           </div>
         </div>
       </aside>
@@ -96,7 +102,7 @@ export default function App() {
         <header className="desktop-topbar">
           <div>
             <p className="eyebrow">AVATAR STUDIO — V2</p>
-            <h1>{selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
+            <h1>{activeCategory === 'skin' ? 'Teinte de peau' : selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
           </div>
           <button className="toolbar-button primary" type="button" onClick={handleSave}>
             Valider mon avatar
@@ -110,13 +116,17 @@ export default function App() {
             <strong>Ta progression.</strong>
           </div>
 
-          <AvatarScene modelUrl={selected.modelUrl} kind={selected.kind} />
+          <AvatarScene
+            modelUrl={selected.modelUrl}
+            kind={selected.kind}
+            skinColor={skinColor}
+          />
 
           <div className="model-chip">
             <span className="status-dot" />
             <div>
               <strong>{selected.kind === 'character' ? 'PERSONNAGE RIGGÉ' : 'MODULE 3D'}</strong>
-              <span>{selected.shortLabel}</span>
+              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : selected.shortLabel}</span>
             </div>
           </div>
 
@@ -129,8 +139,10 @@ export default function App() {
         selected={selected}
         activeCategory={activeCategory}
         expanded={sheetExpanded}
+        config={config}
         onToggleExpanded={() => setSheetExpanded((value) => !value)}
         onSelectCategory={selectCategory}
+        onUpdateConfig={update}
         onReset={handleReset}
         onRandomize={handleRandomize}
         onSave={handleSave}

@@ -6,6 +6,7 @@ import {
 
 export type WardrobeCategoryId =
   | 'character'
+  | 'skin'
   | 'headwear'
   | 'top'
   | 'bottom'
@@ -21,6 +22,7 @@ export type WardrobeCategory = {
 
 export const wardrobeCategories: WardrobeCategory[] = [
   { id: 'character', label: 'Avatar', icon: '●', assetId: productionCharacter.id },
+  { id: 'skin', label: 'Peau', icon: '◉', assetId: productionCharacter.id },
   { id: 'headwear', label: 'Casque', icon: '⌒', assetId: 'headwear-hardhat-v2' },
   { id: 'top', label: 'Haut', icon: '▣', assetId: 'top-workwear-v2' },
   { id: 'bottom', label: 'Bas', icon: '▥', assetId: 'bottom-workshort-v2' },
@@ -32,16 +34,12 @@ export const wardrobeAssets: ProductionAsset[] = [productionCharacter, ...outfit
 
 export const wardrobeAssetById = new Map(wardrobeAssets.map((asset) => [asset.id, asset]))
 
-export const wardrobeCategoryByAssetId = new Map(
-  wardrobeCategories.map((category) => [category.assetId, category.id]),
-)
-
 export const skinTones = [
-  { id: 'skin-light', label: 'Clair', color: '#F3D8C7' },
-  { id: 'skin-light-medium', label: 'Clair moyen', color: '#DDB695' },
-  { id: 'skin-medium', label: 'Moyen', color: '#BE8A68' },
-  { id: 'skin-tan', label: 'Mat', color: '#8C5E43' },
-  { id: 'skin-dark', label: 'Foncé', color: '#563824' },
+  { id: 'skin-light', label: 'Clair', color: '#F1D2BC' },
+  { id: 'skin-light-medium', label: 'Clair moyen', color: '#D7AD8B' },
+  { id: 'skin-medium', label: 'Moyen', color: '#BC8665' },
+  { id: 'skin-tan', label: 'Mat', color: '#87583F' },
+  { id: 'skin-dark', label: 'Foncé', color: '#563625' },
 ] as const
 
 export const hairColors = [
