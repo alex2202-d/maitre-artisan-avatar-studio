@@ -1,75 +1,25 @@
 import { Suspense, useEffect, useMemo } from 'react'
-import { OrbitControls, useGLTF, useTexture } from '@react-three/drei'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import {
-  SRGBColorSpace,
-  type Mesh,
-  type MeshStandardMaterial,
-} from 'three'
+import type { Mesh } from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
 
-function ProductionModel({
-  url,
-  skinTextureUrl,
-}: {
-  url: string
-  skinTextureUrl: string
-}) {
+function ProductionModel({ url }: { url: string }) {
   const { scene } = useGLTF(url)
-  const skinTexture = useTexture(skinTextureUrl)
+  const model = useMemo(() => clone(scene), [scene])
 
   useEffect(() => {
-    skinTexture.flipY = false
-    skinTexture.colorSpace = SRGBColorSpace
-    skinTexture.needsUpdate = true
-  }, [skinTexture])
-
-  const model = useMemo(() => {
-    const next = clone(scene)
-
-    next.traverse((child) => {
+    model.traverse((child) => {
       const mesh = child as Mesh
-      if (!mesh.isMesh) return
-
-      mesh.castShadow = true
-      mesh.receiveShadow = true
-
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-      const clonedMaterials = materials.map((material) => {
-        const standard = material as MeshStandardMaterial
-        if (!standard?.isMeshStandardMaterial) return material
-
-        const cloned = standard.clone()
-        cloned.map = skinTexture
-        cloned.needsUpdate = true
-        return cloned
-      })
-
-      mesh.material = Array.isArray(mesh.material)
-        ? clonedMaterials
-        : clonedMaterials[0]
+      if (mesh.isMesh) {
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+      }
     })
-
-    return next
-  }, [scene, skinTexture])
-
-  useEffect(() => {
-    return () => {
-      model.traverse((child) => {
-        const mesh = child as Mesh
-        if (!mesh.isMesh) return
-
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-        materials.forEach((material) => {
-          // Do not dispose skinTexture: useTexture owns/caches it.
-          material?.dispose()
-        })
-      })
-    }
   }, [model])
 
   return (
@@ -96,14 +46,11 @@ function LockCamera() {
 
 export default function AvatarScene({
   modelUrl,
-  skinToneId = 'skin-medium',
 }: {
   modelUrl: string
   kind?: 'character' | 'piece'
   skinToneId?: string
 }) {
-  const skinTextureUrl = `/assets/avatar/v2/skins/${skinToneId}.png`
-
   return (
     <Canvas
       shadows
@@ -127,7 +74,7 @@ export default function AvatarScene({
       <LockCamera />
 
       <Suspense fallback={null}>
-        <ProductionModel url={modelUrl} skinTextureUrl={skinTextureUrl} />
+        <ProductionModel url={modelUrl} />
       </Suspense>
 
       <OrbitControls
