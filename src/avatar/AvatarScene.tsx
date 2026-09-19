@@ -1,8 +1,12 @@
 import { Suspense, useEffect, useMemo } from 'react'
-import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { OrbitControls, useGLTF } from '@react-three/drei'
+import { Canvas, useThree } from '@react-three/fiber'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { Mesh } from 'three'
+
+const AVATAR_ROOT_SCALE = 100
+const AVATAR_HEIGHT_METERS = 1.1
+const CAMERA_DISTANCE = 3
 
 function ProductionModel({ url }: { url: string }) {
   const { scene } = useGLTF(url)
@@ -18,12 +22,30 @@ function ProductionModel({ url }: { url: string }) {
     })
   }, [model])
 
-  return <primitive object={model} />
+  return (
+    <group
+      scale={AVATAR_ROOT_SCALE}
+      position={[0, -AVATAR_HEIGHT_METERS / 2, 0]}
+    >
+      <primitive object={model} />
+    </group>
+  )
+}
+
+function LockCamera() {
+  const camera = useThree((state) => state.camera)
+
+  useEffect(() => {
+    camera.position.set(0, 0, CAMERA_DISTANCE)
+    camera.lookAt(0, 0, 0)
+    camera.updateProjectionMatrix()
+  }, [camera])
+
+  return null
 }
 
 export default function AvatarScene({
   modelUrl,
-  kind = 'character',
 }: {
   modelUrl: string
   kind?: 'character' | 'piece'
@@ -33,7 +55,7 @@ export default function AvatarScene({
     <Canvas
       shadows
       dpr={[1, 1.75]}
-      camera={{ position: [2.2, 1.8, 4.8], fov: 34, near: 0.01, far: 100 }}
+      camera={{ position: [0, 0, CAMERA_DISTANCE], fov: 34, near: 0.01, far: 100 }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#E7E3E0']} />
@@ -49,20 +71,23 @@ export default function AvatarScene({
       <directionalLight intensity={1.1} position={[-4, 3, 2]} color="#dfe8ff" />
       <directionalLight intensity={0.75} position={[1, 4, -4]} color="#fff0dc" />
 
+      <LockCamera />
+
       <Suspense fallback={null}>
-        <Bounds fit clip observe margin={kind === 'character' ? 1.18 : 1.5}>
-          <Center bottom>
-            <ProductionModel url={modelUrl} />
-          </Center>
-        </Bounds>
+        <ProductionModel url={modelUrl} />
       </Suspense>
 
       <OrbitControls
         makeDefault
+        target={[0, 0, 0]}
         enablePan={false}
         enableZoom={false}
-        minPolarAngle={Math.PI * 0.12}
-        maxPolarAngle={Math.PI * 0.82}
+        enableDamping
+        dampingFactor={0.08}
+        minDistance={CAMERA_DISTANCE}
+        maxDistance={CAMERA_DISTANCE}
+        minPolarAngle={Math.PI / 2}
+        maxPolarAngle={Math.PI / 2}
       />
     </Canvas>
   )
