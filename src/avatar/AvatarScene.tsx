@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo } from 'react'
 import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Box3, Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
@@ -44,7 +44,6 @@ function patchSkinMaterial(material: Material, skinColor: string, headThreshold:
         bool isHeadRegion = vAvatarLocalPosition.y > avatarHeadThreshold;
         if (isSkinHue && isHeadRegion) {
           float sourceLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-          float targetLuma = max(dot(avatarSkinTone, vec3(0.299, 0.587, 0.114)), 0.08);
           float shade = clamp(sourceLuma / 0.62, 0.54, 1.34);
           vec3 recoloredSkin = avatarSkinTone * shade;
           diffuseColor.rgb = mix(diffuseColor.rgb, recoloredSkin, 0.92);
@@ -108,6 +107,39 @@ function ProductionModel({
   return <primitive object={model} />
 }
 
+function FramedModel({
+  modelUrl,
+  kind,
+  skinColor,
+}: {
+  modelUrl: string
+  kind: 'character' | 'piece'
+  skinColor?: string
+}) {
+  const width = useThree((state) => state.size.width)
+  const mobile = width <= 760
+  const margin =
+    kind === 'character'
+      ? mobile
+        ? 2.15
+        : 1.28
+      : mobile
+        ? 1.85
+        : 1.5
+
+  return (
+    <Bounds fit clip observe margin={margin}>
+      <Center bottom>
+        <ProductionModel
+          url={modelUrl}
+          skinColor={skinColor}
+          applySkinTone={kind === 'character'}
+        />
+      </Center>
+    </Bounds>
+  )
+}
+
 export default function AvatarScene({
   modelUrl,
   kind = 'character',
@@ -138,20 +170,13 @@ export default function AvatarScene({
       <directionalLight intensity={0.75} position={[1, 4, -4]} color="#fff0dc" />
 
       <Suspense fallback={null}>
-        <Bounds fit clip observe margin={kind === 'character' ? 1.18 : 1.5}>
-          <Center bottom>
-            <ProductionModel
-              url={modelUrl}
-              skinColor={skinColor}
-              applySkinTone={kind === 'character'}
-            />
-          </Center>
-        </Bounds>
+        <FramedModel modelUrl={modelUrl} kind={kind} skinColor={skinColor} />
       </Suspense>
 
       <OrbitControls
         makeDefault
         enablePan={false}
+        enableZoom={false}
         minPolarAngle={Math.PI * 0.12}
         maxPolarAngle={Math.PI * 0.82}
       />

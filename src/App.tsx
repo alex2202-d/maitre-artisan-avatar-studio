@@ -130,7 +130,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="viewer-hint">Glisse pour tourner · pince pour zoomer</div>
+          <div className="viewer-hint">Glisse pour faire pivoter</div>
           {message && <div className="toast">{message}</div>}
         </div>
       </section>
