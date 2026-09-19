@@ -7,7 +7,6 @@ import {
 export type WardrobeCategoryId =
   | 'character'
   | 'skin'
-  | 'outfits'
   | 'headwear'
   | 'top'
   | 'bottom'
@@ -24,7 +23,6 @@ export type WardrobeCategory = {
 export const wardrobeCategories: WardrobeCategory[] = [
   { id: 'character', label: 'Avatar', icon: '●', assetId: productionCharacter.id },
   { id: 'skin', label: 'Peau', icon: '◉', assetId: productionCharacter.id },
-  { id: 'outfits', label: 'Tenues', icon: '◆', assetId: productionCharacter.id },
   { id: 'headwear', label: 'Casque', icon: '⌒', assetId: 'headwear-hardhat-v2' },
   { id: 'top', label: 'Haut', icon: '▣', assetId: 'top-workwear-v2' },
   { id: 'bottom', label: 'Bas', icon: '▥', assetId: 'bottom-workshort-v2' },
@@ -60,29 +58,56 @@ export const plannedHairStyles = [
 ] as const
 
 
-export const outfitOptions = [
+export const topOptions = [
   {
-    id: 'outfit-chantier',
-    label: 'Chantier',
-    description: 'Tenue chantier marine avec accents orange.',
+    id: 'top-workwear-v2',
+    label: 'Marine',
+    description: 'Haut de travail marine avec accents orange.',
     color: '#172036',
   },
   {
-    id: 'outfit-electricien',
-    label: 'Électricien',
-    description: 'Tenue technique anthracite avec accents orange.',
+    id: 'top-anthracite-v2',
+    label: 'Anthracite',
+    description: 'Haut de travail anthracite avec accents orange.',
     color: '#2A2C32',
   },
   {
-    id: 'outfit-plombier',
-    label: 'Plombier',
-    description: 'Tenue de travail bleue avec accents orange.',
+    id: 'top-blue-v2',
+    label: 'Bleu',
+    description: 'Haut de travail bleu avec accents orange.',
     color: '#264E84',
   },
   {
-    id: 'outfit-peintre',
-    label: 'Peintre',
-    description: 'Tenue de travail claire avec accents orange.',
-    color: '#E0DED8',
+    id: 'top-light-v2',
+    label: 'Clair',
+    description: 'Haut de travail clair avec accents orange.',
+    color: '#D8D5CE',
+  },
+] as const
+
+export const bottomOptions = [
+  {
+    id: 'bottom-workshort-v2',
+    label: 'Marine',
+    description: 'Bas de travail marine avec accents orange.',
+    color: '#172036',
+  },
+  {
+    id: 'bottom-anthracite-v2',
+    label: 'Anthracite',
+    description: 'Bas de travail anthracite avec accents orange.',
+    color: '#2A2C32',
+  },
+  {
+    id: 'bottom-blue-v2',
+    label: 'Bleu',
+    description: 'Bas de travail bleu avec accents orange.',
+    color: '#264E84',
+  },
+  {
+    id: 'bottom-light-v2',
+    label: 'Clair',
+    description: 'Bas de travail clair avec accents orange.',
+    color: '#D8D5CE',
   },
 ] as const
