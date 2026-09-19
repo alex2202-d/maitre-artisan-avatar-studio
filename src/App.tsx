@@ -23,6 +23,11 @@ export default function App() {
     [selectedId],
   )
 
+  const skinModelUrl = useMemo(
+    () => `/assets/avatar/v2/skins/avatar_workwear_v2_${config.skinToneId}.glb`,
+    [config.skinToneId],
+  )
+
   function selectCategory(id: WardrobeCategoryId) {
     setActiveCategory(id)
     const category = wardrobeCategories.find((item) => item.id === id)
@@ -122,9 +127,9 @@ export default function App() {
           </div>
 
           <AvatarScene
-            modelUrl={productionCharacter.modelUrl}
+            key={skinModelUrl}
+            modelUrl={skinModelUrl}
             kind="character"
-            skinToneId={config.skinToneId}
           />
 
           <div className="model-chip">
