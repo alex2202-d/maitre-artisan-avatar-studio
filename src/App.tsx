@@ -6,6 +6,8 @@ import WardrobeCategories from './avatar/wardrobe/WardrobeCategories'
 import WardrobePanel from './avatar/wardrobe/WardrobePanel'
 import MobileWardrobeControls from './avatar/wardrobe/MobileWardrobeControls'
 import {
+  bottomOptions,
+  topOptions,
   wardrobeAssetById,
   wardrobeCategories,
   type WardrobeCategoryId,
@@ -23,10 +25,19 @@ export default function App() {
     [selectedId],
   )
 
-  const avatarModelUrl = useMemo(
-    () =>
-      `/assets/avatar/v2/outfits/${config.outfitId}/avatar_${config.outfitId}_${config.skinToneId}.glb`,
-    [config.outfitId, config.skinToneId],
+  const skinModelUrl = useMemo(
+    () => `/assets/avatar/v2/skins/avatar_workwear_v2_${config.skinToneId}.glb`,
+    [config.skinToneId],
+  )
+
+  const topColor = useMemo(
+    () => topOptions.find((item) => item.id === config.outfit.topId)?.color ?? topOptions[0].color,
+    [config.outfit.topId],
+  )
+
+  const bottomColor = useMemo(
+    () => bottomOptions.find((item) => item.id === config.outfit.bottomId)?.color ?? bottomOptions[0].color,
+    [config.outfit.bottomId],
   )
 
   function selectCategory(id: WardrobeCategoryId) {
@@ -93,7 +104,7 @@ export default function App() {
           <span className="status-dot" />
           <div>
             <strong>Pack final installé</strong>
-            <span>Avatar · peau · 5 modules 3D</span>
+            <span>Avatar · peau · hauts · bas · modules 3D</span>
           </div>
         </div>
       </aside>
@@ -113,7 +124,7 @@ export default function App() {
         <header className="desktop-topbar">
           <div>
             <p className="eyebrow">AVATAR STUDIO — V2</p>
-            <h1>{activeCategory === 'skin' ? 'Teinte de peau' : activeCategory === 'outfits' ? 'Tenues métier' : selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
+            <h1>{activeCategory === 'skin' ? 'Teinte de peau' : activeCategory === 'top' ? 'Hauts' : activeCategory === 'bottom' ? 'Bas' : selected.kind === 'character' ? 'Mon avatar' : selected.label}</h1>
           </div>
           <button className="toolbar-button primary" type="button" onClick={handleSave}>
             Valider mon avatar
@@ -128,16 +139,18 @@ export default function App() {
           </div>
 
           <AvatarScene
-            key={avatarModelUrl}
-            modelUrl={avatarModelUrl}
+            key={`${skinModelUrl}:${config.outfit.topId}:${config.outfit.bottomId}`}
+            modelUrl={skinModelUrl}
             kind="character"
+            topColor={topColor}
+            bottomColor={bottomColor}
           />
 
           <div className="model-chip">
             <span className="status-dot" />
             <div>
               <strong>PERSONNAGE RIGGÉ</strong>
-              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : activeCategory === 'outfits' ? 'Tenue appliquée en 3D' : 'Aperçu sur avatar'}</span>
+              <span>{activeCategory === 'skin' ? 'Teinte personnalisée' : activeCategory === 'top' ? 'Haut appliqué en 3D' : activeCategory === 'bottom' ? 'Bas appliqué en 3D' : 'Aperçu sur avatar'}</span>
             </div>
           </div>
 
