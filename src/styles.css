@@ -401,3 +401,284 @@ h3 { margin-bottom: 12px; font-size: 14px; color: #172034; }
   .swatch, .custom-color { width: 36px; height: 36px; }
   .config-proof { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Production wardrobe V1 */
+.collection-label {
+  margin: 10px 10px 9px;
+  color: #718098;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.production-badge {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 15px;
+  background: rgba(255,255,255,.05);
+}
+.production-badge strong,
+.production-badge span { display: block; }
+.production-badge strong { font-size: 11px; }
+.production-badge div > span { margin-top: 3px; color: #93a2b8; font-size: 9px; }
+
+.status-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #3cc77a;
+  box-shadow: 0 0 0 4px rgba(60,199,122,.13);
+}
+
+.toolbar-button.primary {
+  color: #172033;
+  border-color: #f5bf38;
+  background: linear-gradient(145deg, #ffd45f, #f1b62d);
+}
+
+.production-viewer {
+  background: #e9e9e7;
+  border-color: rgba(255,255,255,.18);
+}
+.production-viewer .stage-copy {
+  color: rgba(31,42,58,.19);
+}
+.production-viewer .stage-copy strong {
+  color: rgba(31,42,58,.32);
+}
+
+.model-chip {
+  position: absolute;
+  z-index: 3;
+  left: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid rgba(28,39,55,.11);
+  border-radius: 14px;
+  background: rgba(255,255,255,.84);
+  color: #1d2839;
+  box-shadow: 0 10px 28px rgba(27,39,56,.12);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+.model-chip strong,
+.model-chip span { display: block; }
+.model-chip strong { font-size: 9px; letter-spacing: .08em; }
+.model-chip div > span { margin-top: 2px; color: #68768a; font-size: 10px; }
+
+.ready-pill {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #e3f7eb;
+  color: #16844c;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.hero-asset {
+  overflow: hidden;
+  border: 1px solid #dce1e9;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(30,47,73,.06);
+}
+.hero-preview {
+  height: 205px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, #fff 0%, #f1f1ef 58%, #e9ebeef2 100%);
+  border-bottom: 1px solid #e3e6ec;
+}
+.hero-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.hero-meta { padding: 15px 16px 12px; }
+.hero-meta > span {
+  color: #2b75e8;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.hero-meta h3 {
+  margin: 5px 0 6px;
+  font-size: 16px;
+}
+.hero-meta p {
+  margin: 0;
+  color: #66758a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.technical-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid #e5e8ee;
+  background: #f8fafc;
+}
+.technical-row span {
+  padding: 10px 6px;
+  color: #5d6a7c;
+  border-right: 1px solid #e5e8ee;
+  font-size: 9px;
+  font-weight: 850;
+  text-align: center;
+}
+.technical-row span:last-child { border-right: 0; }
+
+.wardrobe-section {
+  padding: 22px 0 0;
+}
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-heading span {
+  display: block;
+  margin-bottom: 3px;
+  color: #7d8999;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.section-heading h3 { margin: 0; font-size: 16px; }
+.section-heading > strong {
+  color: #6f7b8d;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.asset-list {
+  display: grid;
+  gap: 9px;
+}
+.asset-card {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid #dce1e9;
+  border-radius: 15px;
+  background: #fff;
+  color: #243147;
+  text-align: left;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.asset-card:hover {
+  transform: translateY(-1px);
+  border-color: #a9c3ee;
+}
+.asset-card.active {
+  border-color: #2d77e8;
+  box-shadow: 0 0 0 2px rgba(45,119,232,.09);
+}
+.asset-thumb {
+  width: 68px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #efefed;
+}
+.asset-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.asset-card-copy span,
+.asset-card-copy strong { display: block; }
+.asset-card-copy span {
+  margin-bottom: 3px;
+  color: #8a95a4;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.asset-card-copy strong { font-size: 11px; }
+.asset-state {
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: #eff4fb;
+  color: #4f6482;
+  font-size: 8px;
+  font-weight: 950;
+}
+.asset-card.active .asset-state {
+  background: #e7f0ff;
+  color: #2067d2;
+}
+
+.outfit-proof {
+  margin-top: 18px;
+  padding: 15px;
+  border-radius: 17px;
+  background: #172236;
+  color: #fff;
+}
+.outfit-proof-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.outfit-proof-title strong { font-size: 12px; }
+.outfit-proof p {
+  margin: 9px 0 13px;
+  color: #aab7c9;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.outfit-proof button {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 11px;
+  background: #f2ba34;
+  color: #172033;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.production-info {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 12px;
+  padding: 12px 4px;
+  border-top: 1px solid #dfe4ec;
+  color: #7c899a;
+  font-size: 9px;
+}
+.production-info strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #46546a;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .production-badge { display: none; }
+  .model-chip { left: 12px; bottom: 58px; }
+  .hero-preview { height: 180px; }
+}
