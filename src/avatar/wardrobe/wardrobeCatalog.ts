@@ -35,11 +35,11 @@ export const wardrobeAssets: ProductionAsset[] = [productionCharacter, ...outfit
 export const wardrobeAssetById = new Map(wardrobeAssets.map((asset) => [asset.id, asset]))
 
 export const skinTones = [
-  { id: 'skin-light', label: 'Clair', color: '#F7D8C6' },
-  { id: 'skin-light-medium', label: 'Clair moyen', color: '#DEAA84' },
-  { id: 'skin-medium', label: 'Moyen', color: '#B8704E' },
-  { id: 'skin-tan', label: 'Mat', color: '#7C4C35' },
-  { id: 'skin-dark', label: 'Foncé', color: '#3F271E' },
+  { id: 'skin-light', label: 'Clair', color: '#E7C7AE' },
+  { id: 'skin-light-medium', label: 'Clair moyen', color: '#D8A582' },
+  { id: 'skin-medium', label: 'Moyen', color: '#BC7F58' },
+  { id: 'skin-tan', label: 'Mat', color: '#8E5D3F' },
+  { id: 'skin-dark', label: 'Foncé', color: '#5F3526' },
 ] as const
 
 export const hairColors = [
