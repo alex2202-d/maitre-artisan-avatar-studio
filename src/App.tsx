@@ -6,7 +6,6 @@ import WardrobeCategories from './avatar/wardrobe/WardrobeCategories'
 import WardrobePanel from './avatar/wardrobe/WardrobePanel'
 import MobileWardrobeControls from './avatar/wardrobe/MobileWardrobeControls'
 import {
-  skinTones,
   wardrobeAssetById,
   wardrobeCategories,
   type WardrobeCategoryId,
@@ -22,11 +21,6 @@ export default function App() {
   const selected = useMemo(
     () => wardrobeAssetById.get(selectedId) ?? productionCharacter,
     [selectedId],
-  )
-
-  const skinColor = useMemo(
-    () => skinTones.find((tone) => tone.id === config.skinToneId)?.color ?? skinTones[2].color,
-    [config.skinToneId],
   )
 
   function selectCategory(id: WardrobeCategoryId) {
@@ -130,7 +124,7 @@ export default function App() {
           <AvatarScene
             modelUrl={productionCharacter.modelUrl}
             kind="character"
-            skinColor={skinColor}
+            skinToneId={config.skinToneId}
           />
 
           <div className="model-chip">
