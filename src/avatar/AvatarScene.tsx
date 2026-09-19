@@ -1,7 +1,14 @@
 import { Suspense, useEffect, useMemo } from 'react'
-import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Box3, Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
+import {
+  Box3,
+  Color,
+  Vector3,
+  type Material,
+  type Mesh,
+  type MeshStandardMaterial,
+} from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 function patchSkinMaterial(material: Material, skinColor: string, headThreshold: number) {
@@ -55,22 +62,35 @@ function patchSkinMaterial(material: Material, skinColor: string, headThreshold:
   return patched
 }
 
-function ProductionModel({
+function NormalizedCharacter({
   url,
   skinColor,
-  applySkinTone,
 }: {
   url: string
   skinColor?: string
-  applySkinTone: boolean
 }) {
   const { scene } = useGLTF(url)
+  const viewport = useThree((state) => state.size)
+  const mobile = viewport.width <= 760
 
-  const model = useMemo(() => {
+  const normalized = useMemo(() => {
     const next = clone(scene)
-    const box = new Box3().setFromObject(next)
-    const height = Math.max(box.max.y - box.min.y, 0.001)
-    const headThreshold = box.min.y + height * 0.64
+    next.updateMatrixWorld(true)
+
+    const sourceBox = new Box3().setFromObject(next)
+    const sourceSize = new Vector3()
+    const sourceCenter = new Vector3()
+    sourceBox.getSize(sourceSize)
+    sourceBox.getCenter(sourceCenter)
+
+    const safeHeight = Math.max(sourceSize.y, 0.001)
+    const safeWidth = Math.max(sourceSize.x, 0.001)
+    const screenAspect = viewport.width / Math.max(viewport.height, 1)
+
+    const maxWorldHeight = mobile ? 2.9 : 3.55
+    const maxWorldWidth = mobile ? Math.max(1.45, 4.4 * screenAspect) : 3.4
+    const fitScale = Math.min(maxWorldHeight / safeHeight, maxWorldWidth / safeWidth)
+    const headThreshold = sourceBox.min.y + safeHeight * 0.64
 
     next.traverse((child) => {
       const mesh = child as Mesh
@@ -79,7 +99,7 @@ function ProductionModel({
       mesh.castShadow = true
       mesh.receiveShadow = true
 
-      if (applySkinTone && skinColor) {
+      if (skinColor) {
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map((material) =>
             patchSkinMaterial(material, skinColor, headThreshold),
@@ -90,59 +110,51 @@ function ProductionModel({
       }
     })
 
-    return next
-  }, [scene, skinColor, applySkinTone])
+    return {
+      object: next,
+      scale: fitScale,
+      position: [
+        -sourceCenter.x * fitScale,
+        -sourceBox.min.y * fitScale,
+        -sourceCenter.z * fitScale,
+      ] as [number, number, number],
+      targetY: (safeHeight * fitScale) / 2,
+    }
+  }, [scene, skinColor, viewport.width, viewport.height, mobile])
 
   useEffect(() => {
     return () => {
-      model.traverse((child) => {
+      normalized.object.traverse((child) => {
         const mesh = child as Mesh
         if (!mesh.isMesh) return
         if (Array.isArray(mesh.material)) mesh.material.forEach((material) => material.dispose())
         else mesh.material?.dispose()
       })
     }
-  }, [model])
-
-  return <primitive object={model} />
-}
-
-function FramedModel({
-  modelUrl,
-  kind,
-  skinColor,
-}: {
-  modelUrl: string
-  kind: 'character' | 'piece'
-  skinColor?: string
-}) {
-  const width = useThree((state) => state.size.width)
-  const mobile = width <= 760
-  const margin =
-    kind === 'character'
-      ? mobile
-        ? 1.55
-        : 1.28
-      : mobile
-        ? 1.85
-        : 1.5
+  }, [normalized])
 
   return (
-    <Bounds fit clip observe={false} margin={margin}>
-      <Center bottom>
-        <ProductionModel
-          url={modelUrl}
-          skinColor={skinColor}
-          applySkinTone={kind === 'character'}
-        />
-      </Center>
-    </Bounds>
+    <>
+      <group position={normalized.position} scale={normalized.scale}>
+        <primitive object={normalized.object} />
+      </group>
+
+      <OrbitControls
+        makeDefault
+        target={[0, normalized.targetY, 0]}
+        enablePan={false}
+        enableZoom={false}
+        enableDamping
+        dampingFactor={0.08}
+        minPolarAngle={Math.PI / 2}
+        maxPolarAngle={Math.PI / 2}
+      />
+    </>
   )
 }
 
 export default function AvatarScene({
   modelUrl,
-  kind = 'character',
   skinColor,
 }: {
   modelUrl: string
@@ -153,7 +165,7 @@ export default function AvatarScene({
     <Canvas
       shadows
       dpr={[1, 1.75]}
-      camera={{ position: [0, 1.4, 6], fov: 34, near: 0.01, far: 100 }}
+      camera={{ position: [0, 1.45, 7.5], fov: 34, near: 0.01, far: 100 }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#E7E3E0']} />
@@ -170,18 +182,8 @@ export default function AvatarScene({
       <directionalLight intensity={0.75} position={[1, 4, -4]} color="#fff0dc" />
 
       <Suspense fallback={null}>
-        <FramedModel modelUrl={modelUrl} kind={kind} skinColor={skinColor} />
+        <NormalizedCharacter url={modelUrl} skinColor={skinColor} />
       </Suspense>
-
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableZoom={false}
-        enableDamping
-        dampingFactor={0.08}
-        minPolarAngle={Math.PI / 2}
-        maxPolarAngle={Math.PI / 2}
-      />
     </Canvas>
   )
 }
