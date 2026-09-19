@@ -26,6 +26,7 @@ export function useAvatarConfig() {
       ...current,
       skinToneId: choose(['skin-light', 'skin-light-medium', 'skin-medium', 'skin-tan', 'skin-dark'] as const),
       hairColorId: choose(['hair-dark', 'hair-brown', 'hair-chestnut', 'hair-blond', 'hair-red'] as const),
+      outfitId: choose(['outfit-chantier', 'outfit-electricien', 'outfit-plombier', 'outfit-peintre'] as const),
       outfit: { ...defaultAvatarConfigV2.outfit },
     }))
   }, [])
