@@ -1,7 +1,8 @@
 import type { AvatarConfigV2 } from './avatarConfig'
 import {
-  outfitOptions,
+  bottomOptions,
   skinTones,
+  topOptions,
   wardrobeCategories,
   type WardrobeCategoryId,
 } from './wardrobeCatalog'
@@ -80,29 +81,46 @@ export default function MobileWardrobeControls({
               </button>
             ))}
           </div>
-        ) : activeCategory === 'outfits' ? (
-          <div className="mobile-outfit-strip" aria-label="Tenues métier">
-            {outfitOptions.map((outfit) => (
+        ) : activeCategory === 'top' ? (
+          <div className="mobile-outfit-strip" aria-label="Hauts">
+            {topOptions.map((item) => (
               <button
-                key={outfit.id}
+                key={item.id}
                 type="button"
-                className={config.outfitId === outfit.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
-                onClick={() => onUpdateConfig({ outfitId: outfit.id })}
-                aria-label={outfit.label}
-                aria-pressed={config.outfitId === outfit.id}
+                className={config.outfit.topId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
+                onClick={() => onUpdateConfig({ outfit: { ...config.outfit, topId: item.id } })}
+                aria-label={item.label}
+                aria-pressed={config.outfit.topId === item.id}
               >
-                <span style={{ backgroundColor: outfit.color }} />
-                <small>{outfit.label}</small>
+                <span style={{ backgroundColor: item.color }} />
+                <small>{item.label}</small>
+              </button>
+            ))}
+          </div>
+        ) : activeCategory === 'bottom' ? (
+          <div className="mobile-outfit-strip" aria-label="Bas">
+            {bottomOptions.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={config.outfit.bottomId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
+                onClick={() => onUpdateConfig({ outfit: { ...config.outfit, bottomId: item.id } })}
+                aria-label={item.label}
+                aria-pressed={config.outfit.bottomId === item.id}
+              >
+                <span style={{ backgroundColor: item.color }} />
+                <small>{item.label}</small>
               </button>
             ))}
           </div>
         ) : (
           <div className="mobile-dock-hint">
             <span>‹</span>
-            <p>Flèches : accessoires, couleurs et tenues</p>
+            <p>Flèches : accessoires, couleurs, hauts et bas</p>
             <span>›</span>
           </div>
         )}
+
       </div>
     </div>
   )
