@@ -1,3 +1,4 @@
+# retry 2
 # target|source
 public/assets/avatar/v1/base/avatar_workwear_static.glb|https://v3b.fal.media/files/b/0aab06fe/ik66TXstE1yS4lNjNY1-1_model.glb
 public/assets/avatar/v1/base/avatar_workwear_rigged.glb|https://v3b.fal.media/files/b/0aab0703/hwRvEzfDfUoxJCZr4IGhB_rigged_character.glb
