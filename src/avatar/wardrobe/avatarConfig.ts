@@ -6,7 +6,6 @@ export type AvatarConfigV2 = {
   skinToneId: string
   hairStyleId: string
   hairColorId: string
-  outfitId: string
   outfit: {
     headwearId: string | null
     topId: string | null
@@ -24,7 +23,6 @@ export const defaultAvatarConfigV2: AvatarConfigV2 = {
   skinToneId: 'skin-medium',
   hairStyleId: 'hair-none',
   hairColorId: 'hair-dark',
-  outfitId: 'outfit-chantier',
   outfit: {
     headwearId: 'headwear-hardhat-v2',
     topId: 'top-workwear-v2',
