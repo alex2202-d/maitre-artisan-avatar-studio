@@ -60,7 +60,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="collection-label">TENUE 01</div>
+        <div className="collection-label">TENUE V2</div>
         <nav className="studio-nav" aria-label="Éléments du vestiaire">
           {productionAssets.map((asset) => (
             <button
@@ -77,7 +77,7 @@ export default function App() {
         <div className="production-badge">
           <span className="status-dot" />
           <div>
-            <strong>Pack 3D installé</strong>
+            <strong>Pack 3D V2 installé</strong>
             <span>1 avatar · {outfit01Assets.length} modules</span>
           </div>
         </div>
@@ -86,8 +86,8 @@ export default function App() {
       <section className="viewer-column">
         <header className="topbar">
           <div>
-            <p className="eyebrow">PERSONNAGE PRODUCTION — V1</p>
-            <h1>{selected.kind === 'character' ? 'Tenue chantier 01' : selected.label}</h1>
+            <p className="eyebrow">PERSONNAGE PRODUCTION — V2</p>
+            <h1>{selected.kind === 'character' ? 'Tenue chantier V2' : selected.label}</h1>
           </div>
           <div className="top-actions">
             {selected.kind === 'piece' && (
@@ -95,8 +95,8 @@ export default function App() {
                 Voir le personnage
               </button>
             )}
-            <button className="toolbar-button" onClick={() => notify('Pack 3D chargé depuis le vestiaire')}>
-              ✓ Pack prêt
+            <button className="toolbar-button" onClick={() => notify('Pack 3D V2 chargé depuis le vestiaire')}>
+              ✓ Pack V2 prêt
             </button>
           </div>
         </header>
@@ -113,7 +113,7 @@ export default function App() {
           <div className="model-chip">
             <span className="status-dot" />
             <div>
-              <strong>{selected.kind === 'character' ? 'PERSONNAGE RIGGÉ' : 'MODULE 3D SÉPARÉ'}</strong>
+              <strong>{selected.kind === 'character' ? 'PERSONNAGE FINAL RIGGÉ' : 'MODULE 3D V2'}</strong>
               <span>{selected.shortLabel}</span>
             </div>
           </div>
@@ -144,15 +144,15 @@ export default function App() {
           <div className="technical-row">
             <span>GLB réel</span>
             <span>{selected.kind === 'character' ? 'Riggé' : 'Séparé'}</span>
-            <span>Texture incluse</span>
+            <span>PBR / texture</span>
           </div>
         </section>
 
         <section className="wardrobe-section">
           <div className="section-heading">
             <div>
-              <span>PACK 01</span>
-              <h3>Première tenue</h3>
+              <span>PACK V2</span>
+              <h3>Tenue finale</h3>
             </div>
             <strong>{outfit01Assets.length} modules</strong>
           </div>
@@ -172,20 +172,20 @@ export default function App() {
         <section className="outfit-proof">
           <div className="outfit-proof-title">
             <span className="status-dot" />
-            <strong>Tenue complète disponible</strong>
+            <strong>Pack final V2 disponible</strong>
           </div>
           <p>
-            Le personnage complet utilise le modèle riggé de la tenue 01. Chaque élément de la tenue est aussi
-            conservé comme asset 3D distinct dans le catalogue.
+            Le personnage complet utilise le modèle final riggé V2. Les cinq éléments du vestiaire sont conservés
+            comme assets 3D séparés à partir de la direction artistique validée.
           </p>
-          <button onClick={() => setSelectedId(productionCharacter.id)}>Afficher la tenue complète</button>
+          <button onClick={() => setSelectedId(productionCharacter.id)}>Afficher le personnage final</button>
         </section>
 
         <section className="production-info">
           <span>Identifiant</span>
           <strong>{outfit01.id}</strong>
           <span>Base</span>
-          <strong>avatar_workwear_rigged.glb</strong>
+          <strong>avatar_workwear_v2_rigged.glb</strong>
         </section>
       </aside>
     </main>

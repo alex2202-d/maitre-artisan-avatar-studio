@@ -1,0 +1,63 @@
+name: Vendor Avatar V2 assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vendor-avatar-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download final V2 GLB pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/assets/avatar/v2/base
+          mkdir -p public/assets/avatar/v2/outfit01
+          mkdir -p public/assets/avatar/v2/previews
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1299/DGkfVZ1IN48pvV15hLr_D_rigged_character.glb' -o public/assets/avatar/v2/base/avatar_workwear_v2_rigged.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1294/V3JLc0Gl2udKmVxDU5Tdw_preview.png' -o public/assets/avatar/v2/previews/avatar_workwear_v2.png
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab123a/4HD6HwSngzyDezhH3fsNh_model.glb' -o public/assets/avatar/v2/outfit01/headwear_hardhat_v2.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab123b/1cx6ilVegLCrliblX2bAC_preview.png' -o public/assets/avatar/v2/previews/headwear_hardhat_v2.png
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab123c/PGHjcz2PwThtMNKzhfcXB_model.glb' -o public/assets/avatar/v2/outfit01/top_workwear_v2.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab123d/i56E0aPrN919nu1fwYnVc_preview.png' -o public/assets/avatar/v2/previews/top_workwear_v2.png
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab123f/2_FpxQyadCekrgREkX1B6_model.glb' -o public/assets/avatar/v2/outfit01/bottom_workshort_v2.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1240/p0cy6Fk5tKCdpRci9JEYw_preview.png' -o public/assets/avatar/v2/previews/bottom_workshort_v2.png
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1238/-UWmUIU6oxjCc7djMLSU8_model.glb' -o public/assets/avatar/v2/outfit01/gloves_work_v2.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1239/hlfu3YHvwBWxF3aR1ST-z_preview.png' -o public/assets/avatar/v2/previews/gloves_work_v2.png
+
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1243/vIxzfadfHSB8ADofStp6k_model.glb' -o public/assets/avatar/v2/outfit01/shoes_work_boots_v2.glb
+          curl --fail --location --retry 3 'https://v3b.fal.media/files/b/0aab1244/fF7ZV32YFgNlqbr0LeT9o_preview.png' -o public/assets/avatar/v2/previews/shoes_work_boots_v2.png
+
+          test -s public/assets/avatar/v2/base/avatar_workwear_v2_rigged.glb
+          test -s public/assets/avatar/v2/outfit01/headwear_hardhat_v2.glb
+          test -s public/assets/avatar/v2/outfit01/top_workwear_v2.glb
+          test -s public/assets/avatar/v2/outfit01/bottom_workshort_v2.glb
+          test -s public/assets/avatar/v2/outfit01/gloves_work_v2.glb
+          test -s public/assets/avatar/v2/outfit01/shoes_work_boots_v2.glb
+
+      - name: Commit vendored assets
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/avatar/v2
+          if git diff --cached --quiet; then
+            echo 'No asset changes to commit.'
+            exit 0
+          fi
+          git commit -m 'assets: vendor final avatar V2 pack'
+          git push

@@ -65,5 +65,3 @@ export default function AvatarScene({
     </Canvas>
   )
 }
-
-useGLTF.preload('/assets/avatar/v1/base/avatar_workwear_rigged.glb')
