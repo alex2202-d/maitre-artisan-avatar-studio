@@ -4,6 +4,7 @@ import { productionCharacter } from './avatar/productionCatalog'
 import { useAvatarConfig } from './avatar/wardrobe/useAvatarConfig'
 import WardrobeCategories from './avatar/wardrobe/WardrobeCategories'
 import WardrobePanel from './avatar/wardrobe/WardrobePanel'
+import MobileWardrobeControls from './avatar/wardrobe/MobileWardrobeControls'
 import {
   skinTones,
   wardrobeAssetById,
@@ -33,6 +34,16 @@ export default function App() {
     const category = wardrobeCategories.find((item) => item.id === id)
     if (category) setSelectedId(category.assetId)
     setSheetExpanded(true)
+  }
+
+  function moveCategory(direction: -1 | 1) {
+    const currentIndex = Math.max(
+      0,
+      wardrobeCategories.findIndex((item) => item.id === activeCategory),
+    )
+    const nextIndex =
+      (currentIndex + direction + wardrobeCategories.length) % wardrobeCategories.length
+    selectCategory(wardrobeCategories[nextIndex].id)
   }
 
   function notify(text: string) {
@@ -131,6 +142,17 @@ export default function App() {
           </div>
 
           <div className="viewer-hint">Glisse pour faire pivoter</div>
+
+          <MobileWardrobeControls
+            activeCategory={activeCategory}
+            config={config}
+            onPreviousCategory={() => moveCategory(-1)}
+            onNextCategory={() => moveCategory(1)}
+            onUpdateConfig={update}
+            onReset={handleReset}
+            onSave={handleSave}
+          />
+
           {message && <div className="toast">{message}</div>}
         </div>
       </section>
