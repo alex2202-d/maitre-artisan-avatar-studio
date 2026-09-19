@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo } from 'react'
 import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
@@ -25,9 +25,6 @@ function patchSkinMaterial(material: Material, skinColor: string) {
         float g = diffuseColor.g;
         float b = diffuseColor.b;
 
-        // Meshy baked the avatar into one texture/material.
-        // Detect warm, low-saturation skin pixels while excluding the
-        // much more saturated orange/yellow workwear accents.
         bool isSkinHue =
           r > g * 1.025 &&
           g > b * 1.015 &&
@@ -98,25 +95,6 @@ function ProductionModel({
   return <primitive object={model} />
 }
 
-function FramedCharacter({
-  modelUrl,
-  skinColor,
-}: {
-  modelUrl: string
-  skinColor?: string
-}) {
-  const width = useThree((state) => state.size.width)
-  const mobile = width <= 760
-
-  return (
-    <Bounds fit clip observe={false} margin={mobile ? 1.34 : 1.22}>
-      <Center>
-        <ProductionModel url={modelUrl} skinColor={skinColor} />
-      </Center>
-    </Bounds>
-  )
-}
-
 export default function AvatarScene({
   modelUrl,
   skinColor,
@@ -129,7 +107,7 @@ export default function AvatarScene({
     <Canvas
       shadows
       dpr={[1, 1.75]}
-      camera={{ position: [0, 0, 6], fov: 34, near: 0.01, far: 100 }}
+      camera={{ position: [2.2, 1.8, 4.8], fov: 34, near: 0.01, far: 100 }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#E7E3E0']} />
@@ -146,7 +124,11 @@ export default function AvatarScene({
       <directionalLight intensity={0.75} position={[1, 4, -4]} color="#fff0dc" />
 
       <Suspense fallback={null}>
-        <FramedCharacter modelUrl={modelUrl} skinColor={skinColor} />
+        <Bounds fit clip observe margin={1.18}>
+          <Center bottom>
+            <ProductionModel url={modelUrl} skinColor={skinColor} />
+          </Center>
+        </Bounds>
       </Suspense>
 
       <OrbitControls
