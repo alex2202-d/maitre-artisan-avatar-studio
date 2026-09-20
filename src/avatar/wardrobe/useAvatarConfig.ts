@@ -25,11 +25,12 @@ export function useAvatarConfig() {
     setConfig((current) => ({
       ...current,
       skinToneId: choose(['skin-light', 'skin-light-medium', 'skin-medium', 'skin-tan', 'skin-dark'] as const),
+      faceId: choose(['face-classic', 'face-smile', 'face-determined', 'face-surprised'] as const),
       hairColorId: choose(['hair-dark', 'hair-brown', 'hair-chestnut', 'hair-blond', 'hair-red'] as const),
       outfit: {
         ...defaultAvatarConfigV2.outfit,
-        topId: choose(['top-workwear-v2', 'top-anthracite-v2', 'top-blue-v2', 'top-light-v2'] as const),
-        bottomId: choose(['bottom-workshort-v2', 'bottom-anthracite-v2', 'bottom-blue-v2', 'bottom-light-v2'] as const),
+        topId: choose(['top-red-v2', 'top-blue-v2', 'top-yellow-v2', 'top-green-v2'] as const),
+        bottomId: choose(['bottom-red-v2', 'bottom-blue-v2', 'bottom-yellow-v2', 'bottom-green-v2'] as const),
       },
     }))
   }, [])
