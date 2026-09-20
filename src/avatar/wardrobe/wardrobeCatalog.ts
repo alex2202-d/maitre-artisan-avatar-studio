@@ -73,6 +73,7 @@ export const hairOptions = [
 ] as const
 
 export const headwearOptions = [
+  { id: 'helmet-none', label: 'Aucun', color: '#D7D7D2' },
   { id: 'helmet-yellow', label: 'Jaune', color: '#F4C430' },
   { id: 'helmet-blue', label: 'Bleu', color: '#2468C9' },
   { id: 'helmet-red', label: 'Rouge', color: '#D93636' },
