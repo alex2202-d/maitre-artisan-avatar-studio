@@ -133,6 +133,10 @@ export default function App() {
             shoeColor={shoeColor}
             accessoryId={config.outfit.accessoryId}
             headwearId={config.outfit.headwearId}
+            topId={config.outfit.topId}
+            bottomId={config.outfit.bottomId}
+            glovesId={config.outfit.glovesId}
+            shoesId={config.outfit.shoesId}
           />
 
           <div className="model-chip"><span className="status-dot" /><div><strong>PERSONNAGE 3D</strong><span>Slots actifs dans le viewer</span></div></div>
