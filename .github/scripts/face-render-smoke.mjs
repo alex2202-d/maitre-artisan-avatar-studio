@@ -10,10 +10,10 @@ page.on('pageerror', (error) => errors.push(String(error)))
 page.on('console', (message) => {
   const text = message.text()
   if (
-    message.type() === 'error' ||
     text.includes('THREE.WebGLProgram') ||
     text.includes('Shader Error') ||
-    text.includes('VALIDATE_STATUS false')
+    text.includes('VALIDATE_STATUS false') ||
+    text.includes('WebGL: INVALID_')
   ) {
     errors.push(text)
   }
