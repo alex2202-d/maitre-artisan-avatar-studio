@@ -24,6 +24,38 @@ page.on('console', (message) => {
   }
 })
 
+await page.goto(`${url}?debugBind=1`, { waitUntil: 'networkidle' })
+await page.waitForSelector('canvas')
+await page.waitForTimeout(1200)
+const bindBuffer = await page.locator('canvas').screenshot({ type: 'png' })
+fs.writeFileSync(path.join(outputDir, 'bind-position-debug.png'), bindBuffer)
+const bindPng = PNG.sync.read(bindBuffer)
+
+function decodeBindAt(xf, yf, label) {
+  const x = Math.max(0, Math.min(bindPng.width - 1, Math.round(bindPng.width * xf)))
+  const y = Math.max(0, Math.min(bindPng.height - 1, Math.round(bindPng.height * yf)))
+  const radius = 3
+  let r = 0, g = 0, b = 0, n = 0
+  for (let yy = Math.max(0, y - radius); yy <= Math.min(bindPng.height - 1, y + radius); yy++) {
+    for (let xx = Math.max(0, x - radius); xx <= Math.min(bindPng.width - 1, x + radius); xx++) {
+      const i = (bindPng.width * yy + xx) * 4
+      r += bindPng.data[i]
+      g += bindPng.data[i + 1]
+      b += bindPng.data[i + 2]
+      n++
+    }
+  }
+  r /= n; g /= n; b /= n
+  const px = (r / 255) * 0.70 - 0.35
+  const py = (g / 255) * 1.10
+  const pz = (b / 255) * 0.54 - 0.27
+  console.log(`BIND_SAMPLE ${label}: screen=(${x},${y}) bind=(${px.toFixed(4)},${py.toFixed(4)},${pz.toFixed(4)}) rgb=(${r.toFixed(1)},${g.toFixed(1)},${b.toFixed(1)})`)
+}
+
+decodeBindAt(0.458, 0.363, 'left-eye')
+decodeBindAt(0.536, 0.363, 'right-eye')
+decodeBindAt(0.500, 0.434, 'mouth')
+
 await page.goto(url, { waitUntil: 'networkidle' })
 await page.waitForSelector('canvas')
 await page.waitForTimeout(1500)
