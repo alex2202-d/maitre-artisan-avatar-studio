@@ -159,6 +159,42 @@ for (const [meshIndex, mesh] of meshes.entries()) {
   }
 }
 
+
+console.log('=== FRONT FACE UV REGIONS ===')
+for (const [meshIndex, mesh] of meshes.entries()) {
+  for (const [primitiveIndex, primitive] of (mesh.primitives ?? []).entries()) {
+    const attrs = primitive.attributes ?? {}
+    if (attrs.POSITION === undefined || attrs.TEXCOORD_0 === undefined) continue
+    const positions = readAccessor(attrs.POSITION)
+    const uvs = readAccessor(attrs.TEXCOORD_0)
+    const regions = [
+      {name:'face-front-wide', test:(p)=>p[1]>=0.68 && p[1]<=1.04 && p[2]>=0.10 && Math.abs(p[0])<=0.23},
+      {name:'face-front-tight', test:(p)=>p[1]>=0.72 && p[1]<=0.99 && p[2]>=0.15 && Math.abs(p[0])<=0.19},
+      {name:'eyes-band', test:(p)=>p[1]>=0.82 && p[1]<=0.96 && p[2]>=0.15 && Math.abs(p[0])<=0.18},
+      {name:'mouth-band', test:(p)=>p[1]>=0.68 && p[1]<=0.82 && p[2]>=0.15 && Math.abs(p[0])<=0.13},
+    ]
+    for (const region of regions) {
+      const selected=[]
+      for (let i=0;i<positions.length;i++) if (region.test(positions[i])) selected.push({p:positions[i],uv:uvs[i],index:i})
+      const bins=new Map()
+      for (const item of selected) {
+        const bx=Math.min(7,Math.max(0,Math.floor(item.uv[0]*8)))
+        const by=Math.min(7,Math.max(0,Math.floor(item.uv[1]*8)))
+        const key=bx+','+by
+        bins.set(key,(bins.get(key)??0)+1)
+      }
+      const topBins=[...bins.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12)
+      console.log(JSON.stringify({
+        meshIndex,primitiveIndex,region:region.name,
+        positionBounds:bounds(selected.map(v=>v.p),3),
+        uvBounds:bounds(selected.map(v=>v.uv),2),
+        topUvBins:topBins,
+        sample:selected.slice(0,20)
+      }))
+    }
+  }
+}
+
 console.log('=== ALL NODE NAMES ===')
 nodes.forEach((node, i) => {
   console.log(JSON.stringify({
