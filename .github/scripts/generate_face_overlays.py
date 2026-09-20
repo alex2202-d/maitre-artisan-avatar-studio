@@ -181,10 +181,10 @@ def inspect_feature_vertices(gltf, bin_chunk, source):
         mx, mn = max(r, g, b), min(r, g, b)
         neutral = mx - mn < 45
 
-        if 0.735 <= y <= 0.865 and neutral and mn >= 175:
+        if 0.720 <= y <= 0.825 and z <= -0.180 and neutral and mn >= 175:
             eye_candidates.append(pos)
 
-        if 0.600 <= y <= 0.735 and mx <= 120:
+        if abs(x) <= 0.105 and 0.600 <= y <= 0.725 and z <= -0.150 and mx <= 120:
             mouth_candidates.append(pos)
 
     def summarize(rows):
