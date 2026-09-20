@@ -74,6 +74,15 @@ for (const face of faces) {
   await page.getByRole('button', { name: face }).click()
   await page.waitForTimeout(900)
 
+  const storedFaceId = await page.evaluate(() => {
+    const raw = localStorage.getItem('maitre-artisan-avatar-v2')
+    return raw ? JSON.parse(raw).faceId : null
+  })
+  const pressedFaces = await page
+    .locator('button[aria-pressed="true"]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')))
+  console.log(`FACE_STATE ${face}: stored=${storedFaceId} pressed=${pressedFaces.join(',')}`)
+
   const buffer = await page.locator('canvas').screenshot({ type: 'png' })
   fs.writeFileSync(path.join(outputDir, `${face}.png`), buffer)
 
