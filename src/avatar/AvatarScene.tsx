@@ -1,27 +1,26 @@
 import { Suspense, useEffect, useMemo } from 'react'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import {
-  BoxGeometry,
-  CircleGeometry,
-  Color,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  MeshStandardMaterial,
-  TorusGeometry,
-  type Material,
-} from 'three'
+import { Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
 
+const FACE_INDEX: Record<string, number> = {
+  'face-classic': 0,
+  'face-smile': 1,
+  'face-determined': 2,
+  'face-surprised': 3,
+}
+
 function createWardrobeMaterial(
   material: Material,
   topColor: string,
   bottomColor: string,
+  skinColor: string,
+  faceId: string,
 ) {
   const standard = material as MeshStandardMaterial
   if (!standard.isMeshStandardMaterial) return material
@@ -29,10 +28,14 @@ function createWardrobeMaterial(
   const patched = standard.clone()
   const top = new Color(topColor)
   const bottom = new Color(bottomColor)
+  const skin = new Color(skinColor)
+  const faceIndex = FACE_INDEX[faceId] ?? 0
 
   patched.onBeforeCompile = (shader) => {
     shader.uniforms.avatarTopColor = { value: top }
     shader.uniforms.avatarBottomColor = { value: bottom }
+    shader.uniforms.avatarSkinColor = { value: skin }
+    shader.uniforms.avatarExpression = { value: faceIndex }
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -47,7 +50,25 @@ function createWardrobeMaterial(
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        '#include <common>\nuniform vec3 avatarTopColor;\nuniform vec3 avatarBottomColor;\nvarying vec3 vAvatarBindPosition;',
+        `#include <common>
+uniform vec3 avatarTopColor;
+uniform vec3 avatarBottomColor;
+uniform vec3 avatarSkinColor;
+uniform float avatarExpression;
+varying vec3 vAvatarBindPosition;
+
+float maEllipse(vec2 p, vec2 center, vec2 radius) {
+  vec2 d = (p - center) / radius;
+  return 1.0 - smoothstep(0.82, 1.0, dot(d, d));
+}
+
+float maSegment(vec2 p, vec2 a, vec2 b, float width) {
+  vec2 pa = p - a;
+  vec2 ba = b - a;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.000001), 0.0, 1.0);
+  float d = length(pa - ba * h);
+  return 1.0 - smoothstep(width * 0.72, width, d);
+}`,
       )
       .replace(
         '#include <map_fragment>',
@@ -73,126 +94,81 @@ function createWardrobeMaterial(
           vec3 targetColor = topRegion ? avatarTopColor : avatarBottomColor;
           float preservedShade = clamp(sourceLuma / 0.16, 0.48, 1.45);
           diffuseColor.rgb = clamp(targetColor * preservedShade, 0.0, 1.0);
+        }
+
+        // The GLB has no facial morph targets. "headfront" is only an auxiliary
+        // marker and has zero vertex influence, so the reliable solution is to
+        // rebuild the visible expression directly on the bind-pose head surface.
+        vec3 faceP3 = vAvatarBindPosition;
+        vec2 faceP = faceP3.xy;
+
+        // Camera-facing side of the actual head mesh, measured from the GLB.
+        float frontMask = smoothstep(0.135, 0.175, faceP3.z);
+        vec2 ovalP = vec2(faceP.x / 0.175, (faceP.y - 0.815) / 0.165);
+        float ovalDistance = dot(ovalP, ovalP);
+        float faceMask = frontMask * (1.0 - smoothstep(0.78, 1.0, ovalDistance));
+
+        if (faceMask > 0.001) {
+          // Fully remove the baked eyes and mouth in the central face area.
+          // A restrained vertical shade keeps the patch integrated with the head.
+          float skinShade = clamp(0.985 + (faceP.y - 0.815) * 0.08, 0.965, 1.015);
+          vec3 cleanSkin = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
+          diffuseColor.rgb = mix(diffuseColor.rgb, cleanSkin, faceMask);
+
+          bool smiling = avatarExpression > 0.5 && avatarExpression < 1.5;
+          bool determined = avatarExpression > 1.5 && avatarExpression < 2.5;
+          bool surprised = avatarExpression > 2.5;
+
+          float eyeY = determined ? 0.852 : 0.858;
+          float eyeRx = surprised ? 0.050 : 0.047;
+          float eyeRy = surprised ? 0.066 : (determined ? 0.040 : (smiling ? 0.050 : 0.056));
+
+          float leftEye = maEllipse(faceP, vec2(-0.055, eyeY), vec2(eyeRx, eyeRy));
+          float rightEye = maEllipse(faceP, vec2(0.055, eyeY), vec2(eyeRx, eyeRy));
+          float eyeMask = max(leftEye, rightEye) * frontMask;
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.985), eyeMask);
+
+          float pupilY = eyeY + (smiling ? 0.004 : (determined ? -0.004 : 0.0));
+          float pupilRx = surprised ? 0.0125 : 0.0115;
+          float pupilRy = surprised ? 0.0145 : (determined ? 0.0105 : 0.013);
+          float leftPupil = maEllipse(faceP, vec2(-0.055, pupilY), vec2(pupilRx, pupilRy));
+          float rightPupil = maEllipse(faceP, vec2(0.055, pupilY), vec2(pupilRx, pupilRy));
+          float pupilMask = max(leftPupil, rightPupil) * frontMask;
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.035, 0.032, 0.030), pupilMask);
+
+          if (determined) {
+            float browL = maSegment(faceP, vec2(-0.100, 0.918), vec2(-0.018, 0.892), 0.0085);
+            float browR = maSegment(faceP, vec2(0.018, 0.892), vec2(0.100, 0.918), 0.0085);
+            float brows = max(browL, browR) * frontMask;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.055, 0.045, 0.040), brows);
+
+            float mouth = maSegment(faceP, vec2(-0.043, 0.726), vec2(0.043, 0.726), 0.007);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.055, 0.045, 0.040), mouth * frontMask);
+          } else if (surprised) {
+            float mouthOuter = maEllipse(faceP, vec2(0.0, 0.728), vec2(0.027, 0.035));
+            float mouthInner = maEllipse(faceP, vec2(0.0, 0.728), vec2(0.014, 0.020));
+            float ring = clamp(mouthOuter - mouthInner, 0.0, 1.0) * frontMask;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.045, 0.036, 0.034), ring);
+          } else {
+            float mouthX = faceP.x;
+            float curveY = smiling
+              ? 0.716 + 2.80 * mouthX * mouthX
+              : 0.724 + 1.15 * mouthX * mouthX;
+            float mouthWidth = smiling ? 0.070 : 0.052;
+            float mouthBand =
+              (1.0 - smoothstep(smiling ? 0.006 : 0.005, smiling ? 0.009 : 0.008, abs(faceP.y - curveY))) *
+              (1.0 - smoothstep(mouthWidth - 0.010, mouthWidth, abs(mouthX))) *
+              frontMask;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.055, 0.045, 0.040), mouthBand);
+          }
         }`,
       )
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-v2-${topColor}-${bottomColor}`
+    `ma-wardrobe-face-v4-${topColor}-${bottomColor}-${skinColor}-${faceId}`
   patched.needsUpdate = true
   return patched
-}
-
-function makeFaceDisc(
-  radius: number,
-  material: Material,
-  x: number,
-  y: number,
-  z: number,
-  scaleX = 1,
-  scaleZ = 1,
-) {
-  const mesh = new Mesh(new CircleGeometry(radius, 48), material)
-  mesh.position.set(x, y, z)
-  mesh.rotation.x = -Math.PI / 2
-  mesh.scale.set(scaleX, scaleZ, 1)
-  mesh.renderOrder = 20
-  mesh.userData.generatedFace = true
-  return mesh
-}
-
-function makeFaceBox(
-  width: number,
-  height: number,
-  material: Material,
-  x: number,
-  y: number,
-  z: number,
-  angle = 0,
-) {
-  const mesh = new Mesh(new BoxGeometry(width, 0.42, height), material)
-  mesh.position.set(x, y, z)
-  mesh.rotation.y = angle
-  mesh.renderOrder = 22
-  mesh.userData.generatedFace = true
-  return mesh
-}
-
-function makeSmile(
-  radius: number,
-  material: Material,
-  x: number,
-  y: number,
-  z: number,
-  width = 0.42,
-) {
-  const mesh = new Mesh(new TorusGeometry(radius, width, 8, 36, Math.PI), material)
-  mesh.position.set(x, y, z)
-  mesh.rotation.x = -Math.PI / 2
-  mesh.rotation.y = Math.PI
-  mesh.renderOrder = 22
-  mesh.userData.generatedFace = true
-  return mesh
-}
-
-function createFaceRig(faceId: string, skinColor: string) {
-  const face = new Group()
-  face.name = 'MA_FACE_RIG'
-
-  const skin = new MeshStandardMaterial({
-    color: new Color(skinColor),
-    roughness: 0.92,
-    metalness: 0,
-  })
-  const white = new MeshBasicMaterial({ color: '#ffffff' })
-  const black = new MeshBasicMaterial({ color: '#171717' })
-
-  // The GLB has no morph targets. The dedicated "headfront" bone is therefore
-  // used as the stable attachment point for the visible face module.
-  //
-  // headfront local axes:
-  // X = horizontal, Y = outward from the face, Z = vertical (negative = up).
-  // Small skin-colored discs erase the baked eyes/mouth before the selected
-  // 3D expression is drawn a few millimetres in front of them.
-  const eyeY = 0.34
-  const eyeZ = -18.1
-  const leftX = -4.15
-  const rightX = 4.15
-
-  face.add(makeFaceDisc(1, skin, leftX, 0.18, eyeZ, 5.4, 6.8))
-  face.add(makeFaceDisc(1, skin, rightX, 0.18, eyeZ, 5.4, 6.8))
-  face.add(makeFaceDisc(1, skin, 0, 0.18, -7.4, 5.6, 3.2))
-
-  const isSmile = faceId === 'face-smile'
-  const isDetermined = faceId === 'face-determined'
-  const isSurprised = faceId === 'face-surprised'
-
-  const eyeScaleX = isSurprised ? 4.5 : isDetermined ? 4.1 : 4.15
-  const eyeScaleZ = isSurprised ? 6.4 : isDetermined ? 3.7 : isSmile ? 4.9 : 5.7
-
-  face.add(makeFaceDisc(1, white, leftX, eyeY, eyeZ, eyeScaleX, eyeScaleZ))
-  face.add(makeFaceDisc(1, white, rightX, eyeY, eyeZ, eyeScaleX, eyeScaleZ))
-
-  const pupilRadiusX = isSurprised ? 0.92 : 1.05
-  const pupilRadiusZ = isDetermined ? 0.92 : 1.12
-  const pupilZ = eyeZ + (isSmile ? 0.6 : isDetermined ? -0.2 : 0)
-
-  face.add(makeFaceDisc(1, black, leftX, 0.54, pupilZ, pupilRadiusX, pupilRadiusZ))
-  face.add(makeFaceDisc(1, black, rightX, 0.54, pupilZ, pupilRadiusX, pupilRadiusZ))
-
-  if (isDetermined) {
-    face.add(makeFaceBox(4.5, 0.62, black, -4.1, 0.58, -24.8, -0.24))
-    face.add(makeFaceBox(4.5, 0.62, black, 4.1, 0.58, -24.8, 0.24))
-    face.add(makeFaceBox(7.5, 0.58, black, 0, 0.58, -7.2, 0))
-  } else if (isSurprised) {
-    face.add(makeFaceDisc(1, black, 0, 0.56, -7.0, 1.75, 2.35))
-  } else if (isSmile) {
-    face.add(makeSmile(4.5, black, 0, 0.58, -6.3, 0.48))
-  } else {
-    face.add(makeSmile(3.7, black, 0, 0.58, -6.6, 0.36))
-  }
-
-  return face
 }
 
 function ProductionModel({
@@ -222,23 +198,18 @@ function ProductionModel({
 
       if (Array.isArray(mesh.material)) {
         mesh.material = mesh.material.map((material) =>
-          createWardrobeMaterial(material, topColor, bottomColor),
+          createWardrobeMaterial(material, topColor, bottomColor, skinColor, faceId),
         )
       } else if (mesh.material) {
         mesh.material = createWardrobeMaterial(
           mesh.material,
           topColor,
           bottomColor,
+          skinColor,
+          faceId,
         )
       }
     })
-
-    const headFront = instance.getObjectByName('headfront')
-    if (headFront) {
-      headFront.add(createFaceRig(faceId, skinColor))
-    } else {
-      console.warn('[AvatarStudio] headfront bone not found; face module skipped.')
-    }
 
     return instance
   }, [scene, topColor, bottomColor, skinColor, faceId])
@@ -248,10 +219,6 @@ function ProductionModel({
       model.traverse((child) => {
         const mesh = child as Mesh
         if (!mesh.isMesh) return
-
-        if (mesh.userData.generatedFace) {
-          mesh.geometry?.dispose()
-        }
 
         if (Array.isArray(mesh.material)) {
           mesh.material.forEach((material) => material.dispose())
