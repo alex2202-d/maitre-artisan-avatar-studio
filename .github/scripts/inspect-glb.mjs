@@ -90,6 +90,10 @@ nodes.forEach((node, i) => {
     name: node.name ?? null,
     mesh: node.mesh ?? null,
     skin: node.skin ?? null,
+    translation: node.translation ?? null,
+    rotation: node.rotation ?? null,
+    scale: node.scale ?? null,
+    matrix: node.matrix ?? null,
     children: node.children ?? null,
   }))
 })
