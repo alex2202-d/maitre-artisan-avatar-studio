@@ -197,9 +197,9 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
           // Same visual language as the classic face: one simple dark curve,
           // only a little wider and more cheerful. No teeth, no extra volume.
           float mx = fp.x;
-          float width = 0.067;
+          float width = 0.061;
           float normalized = clamp(abs(mx) / width, 0.0, 1.0);
-          float smileY = 0.647 + 0.026 * normalized * normalized;
+          float smileY = 0.649 + 0.020 * normalized * normalized;
           float mouth =
             (1.0 - smoothstep(0.0045, 0.0070, abs(fp.y - smileY))) *
             (1.0 - smoothstep(width - 0.010, width, abs(mx))) *
@@ -224,16 +224,16 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
           float browL =
             maSegment(
               fp.xy,
-              vec2(-0.108, 0.838),
-              vec2(-0.020, 0.816),
-              0.0065
+              vec2(-0.094, 0.830),
+              vec2(-0.029, 0.815),
+              0.0045
             ) * front;
           float browR =
             maSegment(
               fp.xy,
-              vec2(0.020, 0.816),
-              vec2(0.108, 0.838),
-              0.0065
+              vec2(0.029, 0.815),
+              vec2(0.094, 0.830),
+              0.0045
             ) * front;
           float brows = max(browL, browR);
           overlayColor = mix(overlayColor, dark, brows);
@@ -241,22 +241,15 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
 
         } else if (surprised) {
           // Small graphic O mouth, deliberately restrained.
-          float outer =
+          float mouth =
             maEllipse(
               fp.xy,
               vec2(0.0, 0.658),
-              vec2(0.020, 0.026)
+              vec2(0.014, 0.020)
             ) * front;
-          float inner =
-            maEllipse(
-              fp.xy,
-              vec2(0.0, 0.658),
-              vec2(0.010, 0.014)
-            ) * front;
-          float ring = clamp(outer - inner, 0.0, 1.0);
 
-          overlayColor = mix(overlayColor, dark, ring);
-          overlayAlpha = max(overlayAlpha, ring);
+          overlayColor = mix(overlayColor, dark, mouth);
+          overlayAlpha = max(overlayAlpha, mouth);
         }
 
         diffuseColor.rgb = overlayColor;
