@@ -173,7 +173,11 @@ export default function App() {
   function updateSlot(categoryId: CategoryId, value: string) {
     const key = configKey(categoryId)
     if (!key) return
-    setConfig((current) => ({ ...current, [key]: value }))
+    setConfig((current) => {
+      const next = { ...current, [key]: value }
+      if (categoryId === 'hair' && value !== 'none') next.headwear = 'none'
+      return next
+    })
     setActivePreset('custom')
   }
 
