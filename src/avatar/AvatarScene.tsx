@@ -31,12 +31,12 @@ function createWardrobeMaterial(
   const bottom = new Color(bottomColor)
   const skin = new Color(skinColor)
   const faceIndex = FACE_INDEX[faceId] ?? 0
+  const faceLiteral = faceIndex.toFixed(1)
 
   patched.onBeforeCompile = (shader) => {
     shader.uniforms.avatarTopColor = { value: top }
     shader.uniforms.avatarBottomColor = { value: bottom }
     shader.uniforms.avatarSkinColor = { value: skin }
-    shader.uniforms.avatarExpression = { value: faceIndex }
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -55,7 +55,7 @@ function createWardrobeMaterial(
 uniform vec3 avatarTopColor;
 uniform vec3 avatarBottomColor;
 uniform vec3 avatarSkinColor;
-uniform float avatarExpression;
+const float avatarExpression = ${faceLiteral};
 varying vec3 vAvatarBindPosition;
 
 float maEllipseMask(vec2 p, vec2 center, vec2 radius) {
