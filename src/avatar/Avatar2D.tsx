@@ -23,6 +23,7 @@ type SpriteDef = {
 
 const CORE_ATLAS = '/assets/avatar2d/wardrobe-core-v2.webp'
 const ITEMS_ATLAS = '/assets/avatar2d/wardrobe-items-v2.webp'
+const PRESET_ATLAS = '/assets/avatar2d/wardrobe-presets.webp'
 const BASE_IMAGE = '/assets/avatar2d/base-neutral.png'
 
 const CELL = 256
@@ -168,6 +169,37 @@ const layerBase: CSSProperties = {
   pointerEvents: 'none',
 }
 
+const presetColumns: Record<string, number> = {
+  chantier: 0,
+  electricien: 1,
+  technicien: 2,
+  peintre: 3,
+  voirie: 4,
+}
+
+function PresetSprite({ preset }: { preset: string }) {
+  const col = presetColumns[preset]
+  if (col === undefined) return null
+  const x = col * 320
+  return (
+    <svg
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden', display: 'block' }}
+      viewBox="0 0 320 640"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <image
+        href={PRESET_ATLAS}
+        x={-x}
+        y={0}
+        width={1600}
+        height={640}
+        preserveAspectRatio="none"
+      />
+    </svg>
+  )
+}
+
 function idOrNull(prefix: string, value: string) {
   if (!value || value === 'none' || value === 'bare') return null
   return `${prefix}-${value}`
@@ -177,11 +209,26 @@ export default function Avatar2D({
   config,
   className = '',
   style,
+  preset,
 }: {
   config: Avatar2DConfig
   className?: string
   style?: CSSProperties
+  preset?: string | null
 }) {
+  if (preset && preset !== 'custom' && presetColumns[preset] !== undefined) {
+    return (
+      <div
+        className={`avatar2d-raster ${className}`}
+        style={{ position: 'relative', aspectRatio: '600 / 760', isolation: 'isolate', ...style }}
+        role="img"
+        aria-label={`Avatar Maître Artisan - ${preset}`}
+      >
+        <PresetSprite preset={preset} />
+      </div>
+    )
+  }
+
   const expressionId = `expression-${config.expression}`
   const hairId = idOrNull('hair', config.hair)
   const headwearMap: Record<string, string | null> = {
