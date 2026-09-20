@@ -110,7 +110,7 @@ float maFaceEllipse(vec2 p, vec2 center, vec2 radius) {
           // Independent face asset projected only on the measured front of head.
           vec2 faceUv = vec2(
             (fp.x + 0.152) / 0.304,
-            (fp.y - 0.583) / 0.280
+            (0.863 - fp.y) / 0.280
           );
 
           bool faceUvInside =
