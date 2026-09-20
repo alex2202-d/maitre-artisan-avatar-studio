@@ -120,7 +120,7 @@ function createFaceOverlayMaterial(skinColor: string, faceId: string) {
     metalness: 0,
     transparent: true,
     opacity: 1,
-    alphaTest: 0.01,
+    alphaTest: 0.02,
     depthWrite: false,
     polygonOffset: true,
     polygonOffsetFactor: -3,
@@ -177,11 +177,15 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
 
         // Erase only the baked mouth. Eyes are deliberately untouched.
         float cleanMouthX =
-          1.0 - smoothstep(0.086, 0.104, abs(fp.x));
+          1.0 - smoothstep(0.094, 0.112, abs(fp.x));
         float cleanMouthY =
-          smoothstep(0.625, 0.638, fp.y) *
-          (1.0 - smoothstep(0.690, 0.703, fp.y));
-        float mouthPatch = cleanMouthX * cleanMouthY * front;
+          smoothstep(0.618, 0.632, fp.y) *
+          (1.0 - smoothstep(0.696, 0.710, fp.y));
+
+        // Wider and firmer cleanup mask so the original baked Meshy mouth
+        // cannot show through underneath the interchangeable expression.
+        float mouthPatchSoft = cleanMouthX * cleanMouthY * front;
+        float mouthPatch = smoothstep(0.18, 0.42, mouthPatchSoft);
 
         float overlayAlpha = mouthPatch;
         vec3 overlayColor = cleanSkin;
@@ -250,6 +254,14 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
 
           overlayColor = mix(overlayColor, dark, mouth);
           overlayAlpha = max(overlayAlpha, mouth);
+        }
+
+        overlayAlpha = clamp(overlayAlpha, 0.0, 1.0);
+
+        // Fully cover the centre of the cleanup patch. The soft falloff is kept
+        // only at the perimeter so the transition still blends into the head.
+        if (mouthPatch > 0.55) {
+          overlayAlpha = 1.0;
         }
 
         diffuseColor.rgb = overlayColor;
