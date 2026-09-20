@@ -266,66 +266,114 @@ def paint_expression(source, face_map, target_skin, landmarks, face_id):
     old_mask = build_old_feature_mask(source, face_map)
     old = old_mask.load()
 
-    for pixel, pos in face_map.items():
-        if old[pixel] > 0:
-            op[pixel] = skin_fill(target_skin, pos)
-
     ex = landmarks["eye_x"]
     ey = landmarks["eye_y"]
     erx = landmarks["eye_rx"]
     ery = landmarks["eye_ry"]
-    mouth_y = min(ey - 0.095, landmarks["mouth_y"])
+    mouth_y = min(ey - 0.115, landmarks["mouth_y"])
 
+    # Build a genuinely clean facial canvas before drawing the selected face.
+    # The original Meshy avatar has eyes/mouth baked into the same continuous
+    # mesh + texture, so merely painting a new line on top leaves the old face
+    # visible. We erase the complete eye sockets and mouth zone on the *real*
+    # front-head triangles derived from the GLB UV map.
+    for pixel, pos in face_map.items():
+        x, y, _ = pos
+        erase_eye = (
+            ellipse(pos, -ex, ey, erx * 1.38, ery * 1.42)
+            or ellipse(pos, ex, ey, erx * 1.38, ery * 1.42)
+        )
+        erase_mouth = abs(x) <= max(0.105, ex * 1.85) and abs(y - mouth_y) <= 0.062
+        if old[pixel] > 0 or erase_eye or erase_mouth:
+            op[pixel] = skin_fill(target_skin, pos)
+
+    # Deliberately strong silhouettes: each choice must read immediately at the
+    # normal wardrobe camera distance, not only under pixel-level comparison.
     if face_id == "face-smile":
-        eye_ry = ery * 0.78
-        mouth_width = ex * 1.30
+        eye_rx = erx * 1.02
+        eye_ry = ery * 0.56
+        mouth_width = ex * 1.55
     elif face_id == "face-determined":
-        eye_ry = ery * 0.62
-        mouth_width = ex * 0.85
+        eye_rx = erx * 1.03
+        eye_ry = ery * 0.50
+        mouth_width = ex * 1.05
     else:
-        eye_ry = ery * 1.13
-        mouth_width = ex * 0.62
+        eye_rx = erx * 1.16
+        eye_ry = ery * 1.24
+        mouth_width = ex * 0.78
 
     white = (248, 247, 244, 255)
     dark = (58, 38, 29, 255)
 
     for pixel, pos in face_map.items():
-        x, y, z = pos
+        x, y, _ = pos
 
-        in_left = ellipse(pos, -ex, ey, erx, eye_ry)
-        in_right = ellipse(pos, ex, ey, erx, eye_ry)
+        in_left = ellipse(pos, -ex, ey, eye_rx, eye_ry)
+        in_right = ellipse(pos, ex, ey, eye_rx, eye_ry)
         if in_left or in_right:
             op[pixel] = white
 
-        pupil_ry = max(0.009, eye_ry * 0.24)
-        pupil_rx = max(0.009, erx * 0.23)
-        pupil_shift = 0.006 if face_id == "face-smile" else (-0.003 if face_id == "face-determined" else 0.0)
-        if ellipse(pos, -ex, ey + pupil_shift, pupil_rx, pupil_ry) or ellipse(pos, ex, ey + pupil_shift, pupil_rx, pupil_ry):
+        if face_id == "face-surprised":
+            pupil_rx = max(0.0085, erx * 0.20)
+            pupil_ry = max(0.0100, eye_ry * 0.17)
+            pupil_shift = -0.001
+        elif face_id == "face-determined":
+            pupil_rx = max(0.0090, erx * 0.22)
+            pupil_ry = max(0.0080, eye_ry * 0.26)
+            pupil_shift = -0.004
+        else:
+            pupil_rx = max(0.0095, erx * 0.23)
+            pupil_ry = max(0.0085, eye_ry * 0.27)
+            pupil_shift = 0.005
+
+        if (
+            ellipse(pos, -ex, ey + pupil_shift, pupil_rx, pupil_ry)
+            or ellipse(pos, ex, ey + pupil_shift, pupil_rx, pupil_ry)
+        ):
             op[pixel] = dark
 
         if face_id == "face-determined":
-            brow_y = ey + eye_ry * 0.92
-            if segment_distance(pos, -ex - erx * 0.85, brow_y + 0.012, -ex + erx * 0.80, brow_y - 0.010) <= 0.0065:
+            brow_y = ey + eye_ry * 1.20
+            if segment_distance(
+                pos,
+                -ex - eye_rx * 0.95,
+                brow_y + 0.020,
+                -ex + eye_rx * 0.88,
+                brow_y - 0.014,
+            ) <= 0.0085:
                 op[pixel] = dark
-            if segment_distance(pos, ex - erx * 0.80, brow_y - 0.010, ex + erx * 0.85, brow_y + 0.012) <= 0.0065:
+            if segment_distance(
+                pos,
+                ex - eye_rx * 0.88,
+                brow_y - 0.014,
+                ex + eye_rx * 0.95,
+                brow_y + 0.020,
+            ) <= 0.0085:
                 op[pixel] = dark
-            if segment_distance(pos, -mouth_width, mouth_y, mouth_width, mouth_y) <= 0.0055:
+
+            if segment_distance(
+                pos,
+                -mouth_width,
+                mouth_y,
+                mouth_width,
+                mouth_y,
+            ) <= 0.0075:
                 op[pixel] = dark
 
         elif face_id == "face-surprised":
-            outer = ellipse(pos, 0.0, mouth_y, ex * 0.38, ex * 0.52)
-            inner = ellipse(pos, 0.0, mouth_y, ex * 0.19, ex * 0.29)
+            outer = ellipse(pos, 0.0, mouth_y, ex * 0.48, ex * 0.62)
+            inner = ellipse(pos, 0.0, mouth_y, ex * 0.22, ex * 0.34)
             if outer and not inner:
                 op[pixel] = dark
 
         else:
             if abs(x) <= mouth_width:
-                curve = mouth_y + (0.038 if face_id == "face-smile" else 0.018) * (1.0 - (x / max(mouth_width, 1e-6)) ** 2)
-                if abs(y - curve) <= (0.006 if face_id == "face-smile" else 0.005):
+                # South-Park-like simple graphic smile: broad, clean and readable.
+                curve = mouth_y + 0.050 * (1.0 - (x / max(mouth_width, 1e-6)) ** 2)
+                if abs(y - curve) <= 0.0075:
                     op[pixel] = dark
 
     return overlay
-
 
 def main():
     report = []
