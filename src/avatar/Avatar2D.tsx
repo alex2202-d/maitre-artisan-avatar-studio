@@ -13,80 +13,78 @@ export type Avatar2DConfig = {
   accessory: string
 }
 
-type SpriteSource = 'core' | 'items'
+type AtlasDef = { col: number; row: number }
 
-type SpriteDef = {
-  source: SpriteSource
-  col: number
-  row: number
-}
-
-const CORE_ATLAS = '/assets/avatar2d/wardrobe-core-v2.webp'
-const ITEMS_ATLAS = '/assets/avatar2d/wardrobe-items-v2.webp'
+const BASE_ATLAS = '/assets/avatar2d/avatar-bases-atlas-portrait.webp'
+const LAYERS_ATLAS = '/assets/avatar2d/wardrobe-layers-atlas-portrait.webp'
 const PRESET_ATLAS = '/assets/avatar2d/wardrobe-presets.webp'
-const BASE_IMAGE = '/assets/avatar2d/base-neutral.png'
 
-const CELL = 256
-const atlasDims: Record<SpriteSource, { width: number; height: number }> = {
-  core: { width: 1280, height: 768 },
-  items: { width: 1280, height: 1280 },
+const CELL_W = 600
+const CELL_H = 760
+
+const skinRows: Record<string, number> = {
+  clair: 0,
+  peche: 1,
+  medium: 2,
+  brun: 3,
+  fonce: 4,
 }
 
-const sprites: Record<string, SpriteDef> = {
-  'expression-neutral': { source: 'core', col: 0, row: 0 },
-  'expression-happy': { source: 'core', col: 1, row: 0 },
-  'expression-determined': { source: 'core', col: 2, row: 0 },
-  'expression-surprised': { source: 'core', col: 3, row: 0 },
-  'expression-sad': { source: 'core', col: 4, row: 0 },
-
-  'hair-short': { source: 'core', col: 0, row: 1 },
-  'hair-side': { source: 'core', col: 1, row: 1 },
-  'hair-spiky': { source: 'core', col: 2, row: 1 },
-  'hair-curly': { source: 'core', col: 3, row: 1 },
-  'hair-tuft': { source: 'core', col: 4, row: 1 },
-
-  'headwear-yellow': { source: 'core', col: 0, row: 2 },
-  'headwear-white': { source: 'core', col: 1, row: 2 },
-  'headwear-orange': { source: 'core', col: 2, row: 2 },
-  'headwear-blue': { source: 'core', col: 3, row: 2 },
-  'headwear-cap-blue': { source: 'core', col: 4, row: 2 },
-
-  'top-tank-gray': { source: 'items', col: 0, row: 0 },
-  'top-tee-navy': { source: 'items', col: 1, row: 0 },
-  'top-overalls-blue': { source: 'items', col: 2, row: 0 },
-  'top-jacket-olive': { source: 'items', col: 3, row: 0 },
-  'top-hivis-orange': { source: 'items', col: 4, row: 0 },
-
-  'bottom-shorts-gray': { source: 'items', col: 0, row: 1 },
-  'bottom-shorts-blue': { source: 'items', col: 1, row: 1 },
-  'bottom-cargo-olive': { source: 'items', col: 2, row: 1 },
-  'bottom-pants-dark': { source: 'items', col: 3, row: 1 },
-  'bottom-painter-white': { source: 'items', col: 4, row: 1 },
-
-  'gloves-yellow': { source: 'items', col: 0, row: 2 },
-  'gloves-black': { source: 'items', col: 1, row: 2 },
-  'gloves-orange': { source: 'items', col: 2, row: 2 },
-  'gloves-white': { source: 'items', col: 3, row: 2 },
-
-  'shoes-brown': { source: 'items', col: 0, row: 3 },
-  'shoes-black': { source: 'items', col: 1, row: 3 },
-  'shoes-white': { source: 'items', col: 2, row: 3 },
-  'shoes-orange': { source: 'items', col: 3, row: 3 },
-  'shoes-blue': { source: 'items', col: 4, row: 3 },
-
-  'accessory-belt': { source: 'items', col: 0, row: 4 },
-  'accessory-backpack': { source: 'items', col: 1, row: 4 },
-  'accessory-tool-pouch': { source: 'items', col: 2, row: 4 },
-  'accessory-tape-pouch': { source: 'items', col: 3, row: 4 },
-  'accessory-harness': { source: 'items', col: 4, row: 4 },
+const expressionCols: Record<string, number> = {
+  neutral: 0,
+  happy: 1,
+  determined: 2,
+  surprised: 3,
+  sad: 4,
 }
 
-const skinFilters: Record<string, string> = {
-  clair: 'brightness(1.04) saturate(.93)',
-  peche: 'none',
-  medium: 'sepia(.12) saturate(1.08) brightness(.93)',
-  brun: 'sepia(.22) saturate(1.2) brightness(.82)',
-  fonce: 'sepia(.28) saturate(1.28) brightness(.72)',
+const layers: Record<string, AtlasDef> = {
+  'hair-short': { col: 0, row: 0 },
+  'hair-side': { col: 1, row: 0 },
+  'hair-spiky': { col: 2, row: 0 },
+  'hair-curly': { col: 3, row: 0 },
+  'hair-classic': { col: 4, row: 0 },
+  'hair-bob': { col: 5, row: 0 },
+
+  'headwear-hardhat-yellow': { col: 0, row: 1 },
+  'headwear-hardhat-blue': { col: 1, row: 1 },
+  'headwear-hardhat-orange': { col: 2, row: 1 },
+  'headwear-cap-white': { col: 3, row: 1 },
+  'headwear-cap-gray': { col: 4, row: 1 },
+  'headwear-beanie': { col: 5, row: 1 },
+
+  'top-tank-gray': { col: 0, row: 2 },
+  'top-tee-navy': { col: 1, row: 2 },
+  'top-jacket-blue': { col: 2, row: 2 },
+  'top-jacket-olive': { col: 3, row: 2 },
+  'top-painter-top': { col: 4, row: 2 },
+  'top-hivis-orange': { col: 5, row: 2 },
+
+  'bottom-shorts-gray': { col: 0, row: 3 },
+  'bottom-overalls-blue': { col: 1, row: 3 },
+  'bottom-pants-blue': { col: 2, row: 3 },
+  'bottom-cargo-olive': { col: 3, row: 3 },
+  'bottom-painter-pants': { col: 4, row: 3 },
+  'bottom-cargo-dark': { col: 5, row: 3 },
+
+  'gloves-yellow': { col: 0, row: 4 },
+  'gloves-black': { col: 1, row: 4 },
+  'gloves-orange': { col: 2, row: 4 },
+  'gloves-white': { col: 3, row: 4 },
+  'gloves-blue': { col: 4, row: 4 },
+
+  'shoes-boots-brown': { col: 0, row: 5 },
+  'shoes-boots-black': { col: 1, row: 5 },
+  'shoes-boots-white': { col: 2, row: 5 },
+  'shoes-boots-orange': { col: 3, row: 5 },
+  'shoes-shoes-blue': { col: 4, row: 5 },
+
+  'accessory-belt-brown': { col: 0, row: 6 },
+  'accessory-belt-electric': { col: 1, row: 6 },
+  'accessory-belt-mechanic': { col: 2, row: 6 },
+  'accessory-belt-painter': { col: 3, row: 6 },
+  'accessory-harness': { col: 4, row: 6 },
+  'accessory-pouch-orange': { col: 5, row: 6 },
 }
 
 const hairFilters: Record<string, string> = {
@@ -97,78 +95,6 @@ const hairFilters: Record<string, string> = {
   cuivre: 'sepia(.42) saturate(1.55) hue-rotate(330deg) brightness(1.02)',
 }
 
-function spriteHref(source: SpriteSource) {
-  return source === 'core' ? CORE_ATLAS : ITEMS_ATLAS
-}
-
-function Sprite({
-  id,
-  className,
-  style,
-  half,
-}: {
-  id: string
-  className?: string
-  style?: CSSProperties
-  half?: 'left' | 'right'
-}) {
-  const def = sprites[id]
-  if (!def) return null
-
-  const x = def.col * CELL
-  const y = def.row * CELL
-  const source = spriteHref(def.source)
-  const dims = atlasDims[def.source]
-  const clippedStyle: CSSProperties = { ...style, overflow: 'hidden', display: 'block' }
-
-  if (half) {
-    const halfWidth = CELL / 2
-    const offsetX = half === 'right' ? halfWidth : 0
-    return (
-      <svg
-        className={className}
-        style={clippedStyle}
-        viewBox={`0 0 ${halfWidth} ${CELL}`}
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden="true"
-      >
-        <image
-          href={source}
-          x={-(x + offsetX)}
-          y={-y}
-          width={dims.width}
-          height={dims.height}
-          preserveAspectRatio="none"
-        />
-      </svg>
-    )
-  }
-
-  return (
-    <svg
-      className={className}
-      style={clippedStyle}
-      viewBox={`0 0 ${CELL} ${CELL}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-    >
-      <image
-        href={source}
-        x={-x}
-        y={-y}
-        width={dims.width}
-        height={dims.height}
-        preserveAspectRatio="none"
-      />
-    </svg>
-  )
-}
-
-const layerBase: CSSProperties = {
-  position: 'absolute',
-  pointerEvents: 'none',
-}
-
 const presetColumns: Record<string, number> = {
   chantier: 0,
   electricien: 1,
@@ -177,10 +103,56 @@ const presetColumns: Record<string, number> = {
   voirie: 4,
 }
 
+function AtlasCell({
+  source,
+  sourceWidth,
+  sourceHeight,
+  col,
+  row,
+  style,
+  filter,
+}: {
+  source: string
+  sourceWidth: number
+  sourceHeight: number
+  col: number
+  row: number
+  style?: CSSProperties
+  filter?: string
+}) {
+  return (
+    <svg
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        filter,
+        ...style,
+      }}
+      viewBox={`0 0 ${CELL_W} ${CELL_H}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <image
+        href={source}
+        x={-col * CELL_W}
+        y={-row * CELL_H}
+        width={sourceWidth}
+        height={sourceHeight}
+        preserveAspectRatio="none"
+      />
+    </svg>
+  )
+}
+
 function PresetSprite({ preset }: { preset: string }) {
   const col = presetColumns[preset]
   if (col === undefined) return null
-  const x = col * 320
+
   return (
     <svg
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden', display: 'block' }}
@@ -190,7 +162,7 @@ function PresetSprite({ preset }: { preset: string }) {
     >
       <image
         href={PRESET_ATLAS}
-        x={-x}
+        x={-col * 320}
         y={0}
         width={1600}
         height={640}
@@ -200,9 +172,20 @@ function PresetSprite({ preset }: { preset: string }) {
   )
 }
 
-function idOrNull(prefix: string, value: string) {
-  if (!value || value === 'none' || value === 'bare') return null
-  return `${prefix}-${value}`
+function Layer({ id, filter }: { id: string; filter?: string }) {
+  const def = layers[id]
+  if (!def) return null
+
+  return (
+    <AtlasCell
+      source={LAYERS_ATLAS}
+      sourceWidth={3600}
+      sourceHeight={5320}
+      col={def.col}
+      row={def.row}
+      filter={filter}
+    />
+  )
 }
 
 export default function Avatar2D({
@@ -216,11 +199,19 @@ export default function Avatar2D({
   style?: CSSProperties
   preset?: string | null
 }) {
+  const wrapperStyle: CSSProperties = {
+    position: 'relative',
+    aspectRatio: '600 / 760',
+    isolation: 'isolate',
+    overflow: 'visible',
+    ...style,
+  }
+
   if (preset && preset !== 'custom' && presetColumns[preset] !== undefined) {
     return (
       <div
         className={`avatar2d-raster ${className}`}
-        style={{ position: 'relative', aspectRatio: '600 / 760', isolation: 'isolate', ...style }}
+        style={wrapperStyle}
         role="img"
         aria-label={`Avatar Maître Artisan - ${preset}`}
       >
@@ -229,165 +220,37 @@ export default function Avatar2D({
     )
   }
 
-  const expressionId = `expression-${config.expression}`
-  const hairId = idOrNull('hair', config.hair)
-  const headwearMap: Record<string, string | null> = {
-    none: null,
-    'hardhat-yellow': 'headwear-yellow',
-    'hardhat-white': 'headwear-white',
-    'hardhat-orange': 'headwear-orange',
-    'hardhat-blue': 'headwear-blue',
-    'cap-blue': 'headwear-cap-blue',
-  }
-  const topMap: Record<string, string> = {
-    'tank-gray': 'top-tank-gray',
-    'tee-navy': 'top-tee-navy',
-    'overalls-blue': 'top-overalls-blue',
-    'jacket-olive': 'top-jacket-olive',
-    'hivis-orange': 'top-hivis-orange',
-  }
-  const bottomMap: Record<string, string> = {
-    'shorts-gray': 'bottom-shorts-gray',
-    'shorts-blue': 'bottom-shorts-blue',
-    'cargo-olive': 'bottom-cargo-olive',
-    'pants-dark': 'bottom-pants-dark',
-    'painter-white': 'bottom-painter-white',
-  }
-  const glovesId = config.gloves === 'none' ? null : `gloves-${config.gloves}`
-  const shoesId = config.shoes === 'bare' ? null : `shoes-${config.shoes.replace('boots-', '').replace('shoes-', '')}`
-  const accessoryMap: Record<string, string | null> = {
-    none: null,
-    belt: 'accessory-belt',
-    backpack: 'accessory-backpack',
-    'tool-pouch': 'accessory-tool-pouch',
-    'tape-pouch': 'accessory-tape-pouch',
-    harness: 'accessory-harness',
-  }
-
-  const topId = topMap[config.top] ?? 'top-tank-gray'
-  const bottomId = bottomMap[config.bottom] ?? 'bottom-shorts-gray'
-  const accessoryId = accessoryMap[config.accessory] ?? null
-  const headwearId = headwearMap[config.headwear] ?? null
-  const skinFilter = skinFilters[config.skin] ?? skinFilters.peche
+  const skinRow = skinRows[config.skin] ?? skinRows.peche
+  const expressionCol = expressionCols[config.expression] ?? expressionCols.neutral
   const hairFilter = hairFilters[config.hairColor] ?? hairFilters.brun
-
-  const accessoryStyle: CSSProperties =
-    config.accessory === 'backpack'
-      ? { ...layerBase, left: '29%', top: '35%', width: '42%', zIndex: 1 }
-      : config.accessory === 'harness'
-        ? { ...layerBase, left: '28%', top: '34%', width: '44%', zIndex: 4 }
-        : config.accessory === 'tool-pouch' || config.accessory === 'tape-pouch'
-          ? { ...layerBase, left: '49%', top: '49%', width: '29%', zIndex: 4 }
-          : { ...layerBase, left: '24%', top: '49%', width: '52%', zIndex: 4 }
 
   return (
     <div
       className={`avatar2d-raster ${className}`}
-      style={{
-        position: 'relative',
-        aspectRatio: '600 / 760',
-        isolation: 'isolate',
-        ...style,
-      }}
+      style={wrapperStyle}
       role="img"
-      aria-label="Avatar Maître Artisan"
+      aria-label="Avatar Maître Artisan personnalisé"
     >
-      {accessoryId && config.accessory === 'backpack' && (
-        <Sprite id={accessoryId} style={accessoryStyle} />
-      )}
-
-      <img
-        src={BASE_IMAGE}
-        alt=""
-        draggable={false}
-        style={{
-          ...layerBase,
-          left: '3.3%',
-          top: '2.6%',
-          width: '93.4%',
-          height: '92.1%',
-          objectFit: 'contain',
-          filter: skinFilter,
-          zIndex: 2,
-        }}
+      <AtlasCell
+        source={BASE_ATLAS}
+        sourceWidth={3000}
+        sourceHeight={3800}
+        col={expressionCol}
+        row={skinRow}
       />
 
-      <Sprite
-        id={bottomId}
-        style={{ ...layerBase, left: '27%', top: '51%', width: '46%', zIndex: 3 }}
-      />
+      {config.bottom !== 'none' && <Layer id={`bottom-${config.bottom}`} />}
+      {config.top !== 'none' && <Layer id={`top-${config.top}`} />}
 
-      <Sprite
-        id={topId}
-        style={{ ...layerBase, left: '28.5%', top: '35%', width: '43%', zIndex: 4 }}
-      />
+      {config.accessory !== 'none' && <Layer id={`accessory-${config.accessory}`} />}
+      {config.gloves !== 'none' && <Layer id={`gloves-${config.gloves}`} />}
+      {config.shoes !== 'bare' && <Layer id={`shoes-${config.shoes}`} />}
 
-      {accessoryId && config.accessory !== 'backpack' && (
-        <Sprite id={accessoryId} style={accessoryStyle} />
+      {config.hair !== 'none' && (
+        <Layer id={`hair-${config.hair}`} filter={hairFilter} />
       )}
 
-      {glovesId && (
-        <>
-          <Sprite
-            id={glovesId}
-            half="left"
-            style={{ ...layerBase, left: '9%', top: '46%', width: '19%', zIndex: 5 }}
-          />
-          <Sprite
-            id={glovesId}
-            half="right"
-            style={{ ...layerBase, right: '9%', top: '46%', width: '19%', zIndex: 5 }}
-          />
-        </>
-      )}
-
-      {shoesId && (
-        <>
-          <Sprite
-            id={shoesId}
-            half="left"
-            style={{ ...layerBase, left: '22%', top: '73%', width: '23%', zIndex: 5 }}
-          />
-          <Sprite
-            id={shoesId}
-            half="right"
-            style={{ ...layerBase, right: '22%', top: '73%', width: '23%', zIndex: 5 }}
-          />
-        </>
-      )}
-
-      <Sprite
-        id={expressionId}
-        style={{
-          ...layerBase,
-          left: '21%',
-          top: '3.5%',
-          width: '58%',
-          filter: skinFilter,
-          zIndex: 6,
-        }}
-      />
-
-      {hairId && (
-        <Sprite
-          id={hairId}
-          style={{
-            ...layerBase,
-            left: '18.5%',
-            top: '0.3%',
-            width: '63%',
-            filter: hairFilter,
-            zIndex: 7,
-          }}
-        />
-      )}
-
-      {headwearId && (
-        <Sprite
-          id={headwearId}
-          style={{ ...layerBase, left: '15.5%', top: '-1.6%', width: '69%', zIndex: 8 }}
-        />
-      )}
+      {config.headwear !== 'none' && <Layer id={`headwear-${config.headwear}`} />}
     </div>
   )
 }
