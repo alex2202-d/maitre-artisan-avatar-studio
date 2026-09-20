@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/App.tsx'
-      - 'src/avatar/AvatarScene.tsx'
+      - 'src/avatar/Avatar2D.tsx'
       - 'src/avatar/wardrobe/**'
       - 'public/assets/avatar/v2/**'
       - '.github/scripts/face-render-smoke.mjs'
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - 'src/App.tsx'
-      - 'src/avatar/AvatarScene.tsx'
+      - 'src/avatar/Avatar2D.tsx'
       - 'src/avatar/wardrobe/**'
       - 'public/assets/avatar/v2/**'
       - '.github/scripts/face-render-smoke.mjs'
@@ -53,14 +53,14 @@ jobs:
           cat /tmp/avatar-vite.log
           exit 1
 
-      - name: Verify clean modular wardrobe
+      - name: Verify interactive 2D wardrobe
         run: node .github/scripts/face-render-smoke.mjs
 
       - name: Upload modular validation captures
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: avatar-modular-smoke-captures
+          name: avatar-2d-smoke-captures
           path: .github/face-smoke-output
           if-no-files-found: ignore
 
