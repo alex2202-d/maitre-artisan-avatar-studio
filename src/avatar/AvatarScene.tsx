@@ -239,25 +239,6 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
           overlayColor = mix(overlayColor, dark, brows);
           overlayAlpha = max(overlayAlpha, brows);
 
-          // Very small upper-lid masks to tighten the gaze while retaining the
-          // exact original eye shapes underneath.
-          float lidL =
-            maSegment(
-              fp.xy,
-              vec2(-0.105, 0.808),
-              vec2(-0.020, 0.792),
-              0.0050
-            ) * front;
-          float lidR =
-            maSegment(
-              fp.xy,
-              vec2(0.020, 0.792),
-              vec2(0.105, 0.808),
-              0.0050
-            ) * front;
-          float lids = max(lidL, lidR);
-          overlayColor = mix(overlayColor, cleanSkin, lids);
-          overlayAlpha = max(overlayAlpha, lids);
         } else if (surprised) {
           // Small graphic O mouth, deliberately restrained.
           float outer =
