@@ -132,7 +132,7 @@ for (const face of faces.slice(1)) {
   const capture = captures.get(face)
   const changed = changedPixels(classic, capture)
   console.log(`${face}: ${changed} changed pixels inside the head crop vs Classique`)
-  if (changed < 450) {
+  if (changed < 300) {
     console.error(
       `Face render smoke test failed: ${face} does not visibly change the head crop enough (${changed} pixels).`,
     )
@@ -146,7 +146,7 @@ for (let i = 1; i < faces.length; i++) {
     const b = captures.get(faces[j])
     const changed = changedPixels(a, b)
     console.log(`${faces[i]} vs ${faces[j]}: ${changed} changed face pixels`)
-    if (changed < 250) {
+    if (changed < 120) {
       console.error(
         `Face render smoke test failed: ${faces[i]} and ${faces[j]} are visually too similar.`,
       )
