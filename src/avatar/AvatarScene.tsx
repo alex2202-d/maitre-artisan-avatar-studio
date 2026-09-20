@@ -31,6 +31,7 @@ function createWardrobeMaterial(
   faceAsset: Texture,
   faceAssetKey: string,
   replaceFace: boolean,
+  debugBind: boolean,
 ) {
   const standard = material as MeshStandardMaterial
   if (!standard.isMeshStandardMaterial) return material
@@ -144,10 +145,29 @@ float maFaceEllipse(vec2 p, vec2 center, vec2 radius) {
           diffuseColor.rgb = clamp(targetColor * preservedShade, 0.0, 1.0);
         }`,
       )
+
+    if (debugBind) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+        gl_FragColor = vec4(
+          clamp(
+            vec3(
+              (vAvatarBindPosition.x + 0.35) / 0.70,
+              vAvatarBindPosition.y / 1.10,
+              (vAvatarBindPosition.z + 0.27) / 0.54
+            ),
+            0.0,
+            1.0
+          ),
+          1.0
+        );`,
+      )
+    }
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-projected-face-v1-${topColor}-${bottomColor}-${skinColor}-${faceAssetKey}-${replaceFace}`
+    `ma-wardrobe-projected-face-v2-${topColor}-${bottomColor}-${skinColor}-${faceAssetKey}-${replaceFace}-${debugBind}`
   patched.needsUpdate = true
   return patched
 }
@@ -159,6 +179,7 @@ function ProductionModel({
   skinColor,
   faceAssetUrl,
   replaceFace,
+  debugBind,
 }: {
   url: string
   topColor: string
@@ -166,6 +187,7 @@ function ProductionModel({
   skinColor: string
   faceAssetUrl: string
   replaceFace: boolean
+  debugBind: boolean
 }) {
   const { scene } = useGLTF(url)
   const loadedFaceAsset = useTexture(faceAssetUrl)
@@ -194,6 +216,7 @@ function ProductionModel({
             faceAsset,
             faceAssetUrl,
             replaceFace,
+            debugBind,
           ),
         )
       } else if (mesh.material) {
@@ -205,6 +228,7 @@ function ProductionModel({
           faceAsset,
           faceAssetUrl,
           replaceFace,
+          debugBind,
         )
       }
     })
@@ -218,6 +242,7 @@ function ProductionModel({
     faceAsset,
     faceAssetUrl,
     replaceFace,
+    debugBind,
   ])
 
   useEffect(() => {
@@ -275,6 +300,9 @@ export default function AvatarScene({
   faceId?: string
 }) {
   const replaceFace = faceId !== 'face-classic'
+  const debugBind =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debugBind') === '1'
 
   return (
     <Canvas
@@ -306,6 +334,7 @@ export default function AvatarScene({
           skinColor={skinColor}
           faceAssetUrl={faceAssetUrl}
           replaceFace={replaceFace}
+          debugBind={debugBind}
         />
       </Suspense>
 
