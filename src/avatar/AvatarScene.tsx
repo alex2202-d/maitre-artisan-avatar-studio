@@ -660,7 +660,7 @@ function AvatarAssembly({
         <StaticSlot
           url={SLOT_URLS.headwear}
           color={helmetColor}
-          position={[0, 0.965, -0.005]}
+          position={[0, 0.965, 0.065]}
           scale={[0.36, 0.23, 0.27]}
         />
       )}
