@@ -1,81 +1,104 @@
+import type { OutfitPresetId } from './modularCatalog'
+
 export type AvatarGender = 'male' | 'female'
 
-export type AvatarConfigV2 = {
-  version: 2
+export type AvatarConfigV3 = {
+  version: 3
   bodyType: AvatarGender
   skinToneId: string
   faceId: string
   hairStyleId: string
   hairColorId: string
+  outfitPresetId: OutfitPresetId
   outfit: {
     headwearId: string | null
     topId: string | null
     bottomId: string | null
     glovesId: string | null
     shoesId: string | null
+    accessoryId: string | null
   }
 }
 
-export const AVATAR_STORAGE_KEY = 'maitre-artisan-avatar-v2'
+export const AVATAR_STORAGE_KEY = 'maitre-artisan-avatar-v3'
+const LEGACY_AVATAR_STORAGE_KEY = 'maitre-artisan-avatar-v2'
 
-export const defaultAvatarConfigV2: AvatarConfigV2 = {
-  version: 2,
+export const defaultAvatarConfigV3: AvatarConfigV3 = {
+  version: 3,
   bodyType: 'male',
   skinToneId: 'skin-medium',
-  faceId: 'face-classic',
+  faceId: 'face-base-v3',
   hairStyleId: 'hair-none',
   hairColorId: 'hair-dark',
+  outfitPresetId: 'outfit-chantier',
   outfit: {
-    headwearId: 'headwear-hardhat-v2',
-    topId: 'top-red-v2',
-    bottomId: 'bottom-red-v2',
-    glovesId: 'gloves-work-v2',
-    shoesId: 'shoes-work-boots-v2',
+    headwearId: null,
+    topId: null,
+    bottomId: null,
+    glovesId: null,
+    shoesId: null,
+    accessoryId: null,
   },
 }
 
-export function loadAvatarConfigV2(): AvatarConfigV2 {
-  try {
-    const raw = localStorage.getItem(AVATAR_STORAGE_KEY)
-    if (!raw) return defaultAvatarConfigV2
-
-    const parsed = JSON.parse(raw) as Partial<AvatarConfigV2>
-    if (parsed.version !== 2) return defaultAvatarConfigV2
-
-    const migratedTopIds: Record<string, string> = {
-      'top-workwear-v2': 'top-red-v2',
-      'top-anthracite-v2': 'top-blue-v2',
-      'top-blue-v2': 'top-yellow-v2',
-      'top-light-v2': 'top-green-v2',
-    }
-    const migratedBottomIds: Record<string, string> = {
-      'bottom-workshort-v2': 'bottom-red-v2',
-      'bottom-anthracite-v2': 'bottom-blue-v2',
-      'bottom-blue-v2': 'bottom-yellow-v2',
-      'bottom-light-v2': 'bottom-green-v2',
-    }
-
-    const mergedOutfit = {
-      ...defaultAvatarConfigV2.outfit,
+function normalizeV3(parsed: Partial<AvatarConfigV3>): AvatarConfigV3 {
+  return {
+    ...defaultAvatarConfigV3,
+    ...parsed,
+    version: 3,
+    faceId: 'face-base-v3',
+    hairStyleId: parsed.hairStyleId ?? defaultAvatarConfigV3.hairStyleId,
+    outfitPresetId: parsed.outfitPresetId ?? defaultAvatarConfigV3.outfitPresetId,
+    outfit: {
+      ...defaultAvatarConfigV3.outfit,
       ...(parsed.outfit ?? {}),
-    }
-
-    return {
-      ...defaultAvatarConfigV2,
-      ...parsed,
-      faceId: parsed.faceId ?? defaultAvatarConfigV2.faceId,
-      version: 2,
-      outfit: {
-        ...mergedOutfit,
-        topId: mergedOutfit.topId ? (migratedTopIds[mergedOutfit.topId] ?? mergedOutfit.topId) : defaultAvatarConfigV2.outfit.topId,
-        bottomId: mergedOutfit.bottomId ? (migratedBottomIds[mergedOutfit.bottomId] ?? mergedOutfit.bottomId) : defaultAvatarConfigV2.outfit.bottomId,
-      },
-    }
-  } catch {
-    return defaultAvatarConfigV2
+    },
   }
 }
 
-export function saveAvatarConfigV2(config: AvatarConfigV2) {
+function migrateV2(raw: string): AvatarConfigV3 | null {
+  try {
+    const parsed = JSON.parse(raw) as {
+      version?: number
+      bodyType?: AvatarGender
+      skinToneId?: string
+      hairStyleId?: string
+      hairColorId?: string
+    }
+
+    if (parsed.version !== 2) return null
+
+    return normalizeV3({
+      bodyType: parsed.bodyType,
+      skinToneId: parsed.skinToneId,
+      hairStyleId: parsed.hairStyleId,
+      hairColorId: parsed.hairColorId,
+    })
+  } catch {
+    return null
+  }
+}
+
+export function loadAvatarConfigV3(): AvatarConfigV3 {
+  try {
+    const raw = localStorage.getItem(AVATAR_STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AvatarConfigV3>
+      if (parsed.version === 3) return normalizeV3(parsed)
+    }
+
+    const legacyRaw = localStorage.getItem(LEGACY_AVATAR_STORAGE_KEY)
+    if (legacyRaw) {
+      const migrated = migrateV2(legacyRaw)
+      if (migrated) return migrated
+    }
+  } catch {
+    // Fall through to the production defaults.
+  }
+
+  return defaultAvatarConfigV3
+}
+
+export function saveAvatarConfigV3(config: AvatarConfigV3) {
   localStorage.setItem(AVATAR_STORAGE_KEY, JSON.stringify(config))
 }

@@ -1,9 +1,9 @@
-import type { AvatarConfigV2 } from './avatarConfig'
+import type { AvatarConfigV3 } from './avatarConfig'
 import {
-  bottomOptions,
   faceOptions,
+  outfitPresets,
   skinTones,
-  topOptions,
+  sourceAssetsForCategory,
   wardrobeCategories,
   type WardrobeCategoryId,
 } from './wardrobeCatalog'
@@ -18,14 +18,16 @@ export default function MobileWardrobeControls({
   onSave,
 }: {
   activeCategory: WardrobeCategoryId
-  config: AvatarConfigV2
+  config: AvatarConfigV3
   onPreviousCategory: () => void
   onNextCategory: () => void
-  onUpdateConfig: (patch: Partial<AvatarConfigV2>) => void
+  onUpdateConfig: (patch: Partial<AvatarConfigV3>) => void
   onReset: () => void
   onSave: () => void
 }) {
   const category = wardrobeCategories.find((item) => item.id === activeCategory) ?? wardrobeCategories[0]
+  const sourceAssets = sourceAssetsForCategory(activeCategory)
+  const sourceOnly = sourceAssets.some((asset) => asset.status === 'source-only')
 
   return (
     <div className="mobile-wardrobe-ui" aria-label="Vestiaire mobile">
@@ -82,18 +84,33 @@ export default function MobileWardrobeControls({
               </button>
             ))}
           </div>
+        ) : activeCategory === 'outfit' ? (
+          <div className="mobile-outfit-strip" aria-label="Tenues métier">
+            {outfitPresets.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={config.outfitPresetId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
+                onClick={() => onUpdateConfig({ outfitPresetId: item.id })}
+                aria-label={item.label}
+                aria-pressed={config.outfitPresetId === item.id}
+              >
+                <small>{item.label}</small>
+              </button>
+            ))}
+          </div>
         ) : activeCategory === 'face' ? (
-          <div className="mobile-face-strip" aria-label="Expressions du visage">
+          <div className="mobile-face-strip" aria-label="Visages 3D">
             {faceOptions.map((face) => (
               <button
                 key={face.id}
                 type="button"
-                className={config.faceId === face.id ? 'mobile-face-choice active' : 'mobile-face-choice'}
+                className="mobile-face-choice active"
                 onClick={() => onUpdateConfig({ faceId: face.id })}
                 aria-label={face.label}
-                aria-pressed={config.faceId === face.id}
+                aria-pressed="true"
               >
-                <span className={`face-glyph ${face.id}`}>
+                <span className="face-glyph face-classic">
                   <i className="eye left" />
                   <i className="eye right" />
                   <i className="mouth" />
@@ -102,46 +119,17 @@ export default function MobileWardrobeControls({
               </button>
             ))}
           </div>
-        ) : activeCategory === 'top' ? (
-          <div className="mobile-outfit-strip" aria-label="Hauts">
-            {topOptions.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={config.outfit.topId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
-                onClick={() => onUpdateConfig({ outfit: { ...config.outfit, topId: item.id } })}
-                aria-label={item.label}
-                aria-pressed={config.outfit.topId === item.id}
-              >
-                <span style={{ backgroundColor: item.color }} />
-                <small>{item.label}</small>
-              </button>
-            ))}
-          </div>
-        ) : activeCategory === 'bottom' ? (
-          <div className="mobile-outfit-strip" aria-label="Bas">
-            {bottomOptions.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={config.outfit.bottomId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
-                onClick={() => onUpdateConfig({ outfit: { ...config.outfit, bottomId: item.id } })}
-                aria-label={item.label}
-                aria-pressed={config.outfit.bottomId === item.id}
-              >
-                <span style={{ backgroundColor: item.color }} />
-                <small>{item.label}</small>
-              </button>
-            ))}
-          </div>
         ) : (
           <div className="mobile-dock-hint">
             <span>‹</span>
-            <p>Flèches : visage, accessoires, couleurs, hauts et bas</p>
+            <p>
+              {sourceOnly
+                ? 'GLB séparé détecté · activation après raccordement propre au rig'
+                : 'Flèches : peau, tenue, visage et futurs slots 3D'}
+            </p>
             <span>›</span>
           </div>
         )}
-
       </div>
     </div>
   )

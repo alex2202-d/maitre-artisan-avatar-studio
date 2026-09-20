@@ -1,51 +1,57 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  defaultAvatarConfigV2,
-  loadAvatarConfigV2,
-  saveAvatarConfigV2,
-  type AvatarConfigV2,
+  defaultAvatarConfigV3,
+  loadAvatarConfigV3,
+  saveAvatarConfigV3,
+  type AvatarConfigV3,
 } from './avatarConfig'
+import { outfitPresets } from './modularCatalog'
 
 function choose<T>(values: readonly T[]) {
   return values[Math.floor(Math.random() * values.length)]
 }
 
 export function useAvatarConfig() {
-  const [config, setConfig] = useState<AvatarConfigV2>(() => loadAvatarConfigV2())
+  const [config, setConfig] = useState<AvatarConfigV3>(() => loadAvatarConfigV3())
 
   useEffect(() => {
-    saveAvatarConfigV2(config)
+    saveAvatarConfigV3(config)
   }, [config])
 
   const reset = useCallback(() => {
-    setConfig(defaultAvatarConfigV2)
+    setConfig(defaultAvatarConfigV3)
   }, [])
 
   const randomize = useCallback(() => {
     setConfig((current) => ({
       ...current,
-      skinToneId: choose(['skin-light', 'skin-light-medium', 'skin-medium', 'skin-tan', 'skin-dark'] as const),
-      faceId: choose(['face-classic', 'face-smile', 'face-determined', 'face-surprised'] as const),
-      hairColorId: choose(['hair-dark', 'hair-brown', 'hair-chestnut', 'hair-blond', 'hair-red'] as const),
+      skinToneId: choose([
+        'skin-light',
+        'skin-light-medium',
+        'skin-medium',
+        'skin-tan',
+        'skin-dark',
+      ] as const),
+      faceId: 'face-base-v3',
+      outfitPresetId: choose(outfitPresets.map((preset) => preset.id)),
       outfit: {
-        ...defaultAvatarConfigV2.outfit,
-        topId: choose(['top-red-v2', 'top-blue-v2', 'top-yellow-v2', 'top-green-v2'] as const),
-        bottomId: choose(['bottom-red-v2', 'bottom-blue-v2', 'bottom-yellow-v2', 'bottom-green-v2'] as const),
+        ...defaultAvatarConfigV3.outfit,
       },
     }))
   }, [])
 
-  const update = useCallback((patch: Partial<AvatarConfigV2>) => {
+  const update = useCallback((patch: Partial<AvatarConfigV3>) => {
     setConfig((current) => ({
       ...current,
       ...patch,
       outfit: patch.outfit ? { ...current.outfit, ...patch.outfit } : current.outfit,
-      version: 2,
+      version: 3,
+      faceId: 'face-base-v3',
     }))
   }, [])
 
   const save = useCallback(() => {
-    saveAvatarConfigV2(config)
+    saveAvatarConfigV3(config)
   }, [config])
 
   return { config, update, reset, randomize, save }

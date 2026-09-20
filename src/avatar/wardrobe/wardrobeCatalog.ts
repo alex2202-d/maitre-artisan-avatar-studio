@@ -3,16 +3,25 @@ import {
   productionCharacter,
   type ProductionAsset,
 } from '../productionCatalog'
+import {
+  getSlotAssets,
+  modularSlotAssetById,
+  outfitPresets,
+  type AvatarSlotId,
+} from './modularCatalog'
 
 export type WardrobeCategoryId =
   | 'character'
   | 'skin'
+  | 'outfit'
   | 'face'
+  | 'hair'
   | 'headwear'
   | 'top'
   | 'bottom'
   | 'gloves'
   | 'shoes'
+  | 'accessory'
 
 export type WardrobeCategory = {
   id: WardrobeCategoryId
@@ -24,12 +33,15 @@ export type WardrobeCategory = {
 export const wardrobeCategories: WardrobeCategory[] = [
   { id: 'character', label: 'Avatar', icon: '●', assetId: productionCharacter.id },
   { id: 'skin', label: 'Peau', icon: '◉', assetId: productionCharacter.id },
+  { id: 'outfit', label: 'Tenue', icon: '◆', assetId: productionCharacter.id },
   { id: 'face', label: 'Visage', icon: '◌', assetId: productionCharacter.id },
+  { id: 'hair', label: 'Coiffure', icon: '≈', assetId: productionCharacter.id },
   { id: 'headwear', label: 'Casque', icon: '⌒', assetId: 'headwear-hardhat-v2' },
   { id: 'top', label: 'Haut', icon: '▣', assetId: 'top-workwear-v2' },
   { id: 'bottom', label: 'Bas', icon: '▥', assetId: 'bottom-workshort-v2' },
   { id: 'gloves', label: 'Gants', icon: '✦', assetId: 'gloves-work-v2' },
   { id: 'shoes', label: 'Chaussures', icon: '◒', assetId: 'shoes-work-boots-v2' },
+  { id: 'accessory', label: 'Accessoire', icon: '+', assetId: productionCharacter.id },
 ]
 
 export const wardrobeAssets: ProductionAsset[] = [productionCharacter, ...outfit01Assets]
@@ -45,10 +57,11 @@ export const skinTones = [
 ] as const
 
 export const faceOptions = [
-  { id: 'face-classic', label: 'Classique', description: 'Expression neutre et sympathique.' },
-  { id: 'face-smile', label: 'Souriant', description: 'Sourire simple, yeux d’origine.' },
-  { id: 'face-determined', label: 'Déterminé', description: 'Sourcils discrets et bouche ferme.' },
-  { id: 'face-surprised', label: 'Surpris', description: 'Petite bouche ronde, yeux d’origine.' },
+  {
+    id: 'face-base-v3',
+    label: 'Original 3D',
+    description: 'Visage du mesh riggé, sans filtre, overlay ni patch shader.',
+  },
 ] as const
 
 export const hairColors = [
@@ -61,62 +74,29 @@ export const hairColors = [
 
 export const plannedHairStyles = [
   { id: 'hair-none', label: 'Sans cheveux' },
-  { id: 'hair-short', label: 'Court' },
-  { id: 'hair-tuft', label: 'Mèche' },
-  { id: 'hair-side', label: 'Côté' },
 ] as const
 
+export { outfitPresets }
 
-export const topOptions = [
-  {
-    id: 'top-red-v2',
-    label: 'Rouge',
-    description: 'Haut de travail rouge franc.',
-    color: '#D93636',
-  },
-  {
-    id: 'top-blue-v2',
-    label: 'Bleu',
-    description: 'Haut de travail bleu franc.',
-    color: '#2468C9',
-  },
-  {
-    id: 'top-yellow-v2',
-    label: 'Jaune',
-    description: 'Haut de travail jaune franc.',
-    color: '#E6B51F',
-  },
-  {
-    id: 'top-green-v2',
-    label: 'Vert',
-    description: 'Haut de travail vert franc.',
-    color: '#2E8B57',
-  },
-] as const
+export function categoryToSlot(category: WardrobeCategoryId): AvatarSlotId | null {
+  if (
+    category === 'face' ||
+    category === 'hair' ||
+    category === 'headwear' ||
+    category === 'top' ||
+    category === 'bottom' ||
+    category === 'gloves' ||
+    category === 'shoes' ||
+    category === 'accessory'
+  ) {
+    return category
+  }
+  return null
+}
 
-export const bottomOptions = [
-  {
-    id: 'bottom-red-v2',
-    label: 'Rouge',
-    description: 'Bas de travail rouge franc.',
-    color: '#D93636',
-  },
-  {
-    id: 'bottom-blue-v2',
-    label: 'Bleu',
-    description: 'Bas de travail bleu franc.',
-    color: '#2468C9',
-  },
-  {
-    id: 'bottom-yellow-v2',
-    label: 'Jaune',
-    description: 'Bas de travail jaune franc.',
-    color: '#E6B51F',
-  },
-  {
-    id: 'bottom-green-v2',
-    label: 'Vert',
-    description: 'Bas de travail vert franc.',
-    color: '#2E8B57',
-  },
-] as const
+export function sourceAssetsForCategory(category: WardrobeCategoryId) {
+  const slot = categoryToSlot(category)
+  return slot ? getSlotAssets(slot) : []
+}
+
+export { modularSlotAssetById }
