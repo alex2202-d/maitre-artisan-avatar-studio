@@ -4,6 +4,7 @@ import AvatarActions from './AvatarActions'
 import WardrobeCategories from './WardrobeCategories'
 import {
   bottomOptions,
+  faceOptions,
   skinTones,
   topOptions,
   wardrobeCategories,
@@ -34,6 +35,7 @@ export default function WardrobePanel({
   onSave: () => void
 }) {
   const skinMode = activeCategory === 'skin'
+  const faceMode = activeCategory === 'face'
   const topMode = activeCategory === 'top'
   const bottomMode = activeCategory === 'bottom'
 
@@ -60,9 +62,9 @@ export default function WardrobePanel({
         <div className="wardrobe-heading">
           <div>
             <p className="eyebrow blue">VESTIAIRE V2</p>
-            <h2>{skinMode ? 'Teinte de peau' : topMode ? 'Hauts' : bottomMode ? 'Bas' : selected.shortLabel}</h2>
+            <h2>{skinMode ? 'Teinte de peau' : faceMode ? 'Visage' : topMode ? 'Hauts' : bottomMode ? 'Bas' : selected.shortLabel}</h2>
           </div>
-          <span className="ready-pill">{skinMode ? '5 TEINTES' : topMode || bottomMode ? '4 CHOIX' : '3D'}</span>
+          <span className="ready-pill">{skinMode ? '5 TEINTES' : faceMode ? '4 VISAGES' : topMode || bottomMode ? '4 CHOIX' : '3D'}</span>
         </div>
 
         {skinMode ? (
@@ -80,6 +82,32 @@ export default function WardrobePanel({
                 >
                   <span style={{ backgroundColor: tone.color }} />
                   <strong>{tone.label}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : faceMode ? (
+          <section className="personalization-card">
+            <p>Choisis une expression. Elle est appliquée directement sur le visage 3D.</p>
+            <div className="face-choice-grid" role="list" aria-label="Expressions du visage">
+              {faceOptions.map((face) => (
+                <button
+                  key={face.id}
+                  type="button"
+                  className={config.faceId === face.id ? 'face-choice active' : 'face-choice'}
+                  onClick={() => onUpdateConfig({ faceId: face.id })}
+                  aria-label={face.label}
+                  aria-pressed={config.faceId === face.id}
+                >
+                  <span className={`face-glyph ${face.id}`}>
+                    <i className="eye left" />
+                    <i className="eye right" />
+                    <i className="mouth" />
+                  </span>
+                  <span>
+                    <strong>{face.label}</strong>
+                    <small>{face.description}</small>
+                  </span>
                 </button>
               ))}
             </div>
