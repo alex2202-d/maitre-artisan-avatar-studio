@@ -1023,3 +1023,243 @@ h2 { margin-bottom: 0; color: var(--ink); font-size: 25px; letter-spacing: -.03e
     display: none;
   }
 }
+
+
+/* FACE SELECTOR */
+.face-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.face-choice {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr);
+  align-items: center;
+  gap: 11px;
+  border: 1px solid #dce2eb;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #59677b;
+  text-align: left;
+}
+
+.face-choice.active {
+  border-color: #2d77e8;
+  background: #f1f6ff;
+  color: #1f62cf;
+  box-shadow: 0 0 0 2px rgba(45,119,232,.08);
+}
+
+.face-choice > span:last-child {
+  min-width: 0;
+}
+
+.face-choice strong,
+.face-choice small {
+  display: block;
+}
+
+.face-choice strong {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.face-choice small {
+  margin-top: 3px;
+  color: #7b8798;
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.face-glyph {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: block;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #d8a582;
+  box-shadow: 0 0 0 1px #cfd6e1;
+}
+
+.face-choice.active .face-glyph {
+  box-shadow: 0 0 0 2px #2d77e8;
+}
+
+.face-glyph .eye {
+  position: absolute;
+  top: 12px;
+  width: 6px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+}
+
+.face-glyph .eye::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #151515;
+}
+
+.face-glyph .eye.left { left: 10px; }
+.face-glyph .eye.right { right: 10px; }
+
+.face-glyph .mouth {
+  position: absolute;
+  left: 50%;
+  top: 27px;
+  width: 15px;
+  height: 7px;
+  border-bottom: 2px solid #181818;
+  border-radius: 0 0 12px 12px;
+  transform: translateX(-50%);
+}
+
+.face-glyph.face-smile .mouth {
+  width: 18px;
+  height: 9px;
+  border-bottom-width: 3px;
+}
+
+.face-glyph.face-determined .eye {
+  top: 14px;
+  height: 5px;
+}
+
+.face-glyph.face-determined .mouth {
+  top: 29px;
+  width: 15px;
+  height: 0;
+  border: 0;
+  border-top: 2px solid #181818;
+  border-radius: 0;
+}
+
+.face-glyph.face-surprised .eye {
+  width: 7px;
+  height: 10px;
+  top: 11px;
+}
+
+.face-glyph.face-surprised .mouth {
+  top: 27px;
+  width: 8px;
+  height: 10px;
+  border: 2px solid #181818;
+  border-radius: 50%;
+}
+
+.mobile-face-strip {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 6px;
+}
+
+.mobile-face-choice {
+  min-width: 0;
+  padding: 5px 2px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #6f7b8e;
+}
+
+.mobile-face-choice .face-glyph {
+  width: 34px;
+  height: 34px;
+}
+
+.mobile-face-choice .face-glyph .eye {
+  top: 10px;
+  width: 5px;
+  height: 6px;
+}
+
+.mobile-face-choice .face-glyph .eye.left { left: 8px; }
+.mobile-face-choice .face-glyph .eye.right { right: 8px; }
+
+.mobile-face-choice .face-glyph .mouth {
+  top: 22px;
+  width: 12px;
+  height: 5px;
+}
+
+.mobile-face-choice .face-glyph.face-determined .eye {
+  top: 11px;
+  height: 4px;
+}
+
+.mobile-face-choice .face-glyph.face-determined .mouth {
+  top: 24px;
+  height: 0;
+}
+
+.mobile-face-choice .face-glyph.face-surprised .eye {
+  top: 9px;
+  width: 6px;
+  height: 8px;
+}
+
+.mobile-face-choice .face-glyph.face-surprised .mouth {
+  top: 21px;
+  width: 7px;
+  height: 8px;
+}
+
+.mobile-face-choice small {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 6px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-face-choice.active {
+  border-color: #2d77e8;
+  background: #edf4ff;
+  color: #1f62cf;
+}
+
+.mobile-face-choice.active .face-glyph {
+  box-shadow: 0 0 0 2px #2d77e8;
+}
+
+@media (max-width: 760px) {
+  .face-choice-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .face-choice {
+    padding: 8px;
+    grid-template-columns: 34px minmax(0,1fr);
+    gap: 8px;
+  }
+
+  .face-choice .face-glyph {
+    width: 34px;
+    height: 34px;
+  }
+
+  .face-choice small {
+    display: none;
+  }
+
+  .face-choice strong {
+    font-size: 9px;
+  }
+}
