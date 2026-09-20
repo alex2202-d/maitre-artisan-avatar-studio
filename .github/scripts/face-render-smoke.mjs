@@ -3,6 +3,7 @@ import path from 'node:path'
 import { chromium } from 'playwright'
 import { PNG } from 'pngjs'
 
+// Validates the actual rendered head area against the generated UV face assets.
 const url = process.env.AVATAR_URL ?? 'http://127.0.0.1:5173'
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
