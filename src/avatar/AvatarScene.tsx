@@ -2,7 +2,9 @@ import { Suspense, useEffect, useMemo } from 'react'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import {
+  BufferGeometry,
   Color,
+  Float32BufferAttribute,
   MeshStandardMaterial,
   QuadraticBezierCurve3,
   Vector3,
@@ -15,6 +17,14 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
+
+const SLOT_URLS = {
+  headwear: '/assets/avatar/v2/outfit01/headwear_hardhat_v2.glb',
+  top: '/assets/avatar/v2/outfit01/top_workwear_v2.glb',
+  bottom: '/assets/avatar/v2/outfit01/bottom_workshort_v2.glb',
+  gloves: '/assets/avatar/v2/outfit01/gloves_work_v2.glb',
+  shoes: '/assets/avatar/v2/outfit01/shoes_work_boots_v2.glb',
+} as const
 
 function createWardrobeMaterial(
   material: Material,
@@ -71,9 +81,6 @@ varying vec3 vMaBindPosition;`,
         float b = source.b;
         float y = vMaBindPosition.y;
         float luma = dot(source, vec3(0.299, 0.587, 0.114));
-        float mx = max(r, max(g, b));
-        float mn = min(r, min(g, b));
-        float sat = mx > 0.001 ? (mx - mn) / mx : 0.0;
 
         bool skinLike =
           r > g * 1.02 &&
@@ -120,7 +127,7 @@ varying vec3 vMaBindPosition;`,
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-colors-v3-${topColor}-${bottomColor}-${helmetColor}-${gloveColor}-${shoeColor}`
+    `ma-wardrobe-colors-v4-${topColor}-${bottomColor}-${helmetColor}-${gloveColor}-${shoeColor}`
   patched.needsUpdate = true
   return patched
 }
@@ -215,12 +222,189 @@ function ProductionModel({
   return <primitive object={model} />
 }
 
+function slotMaterial(source: Material | Material[], color: string) {
+  const material = (Array.isArray(source) ? source[0] : source) as MeshStandardMaterial
+  const cloned = material?.isMeshStandardMaterial
+    ? material.clone()
+    : new MeshStandardMaterial()
+
+  cloned.map = null
+  cloned.color = new Color(color)
+  cloned.metalness = 0.02
+  cloned.roughness = 0.78
+  cloned.transparent = false
+  cloned.opacity = 1
+  cloned.needsUpdate = true
+  return cloned
+}
+
+function StaticSlot({
+  url,
+  color,
+  position,
+  scale,
+  rotation = [0, 0, 0],
+}: {
+  url: string
+  color: string
+  position: [number, number, number]
+  scale: [number, number, number]
+  rotation?: [number, number, number]
+}) {
+  const { scene } = useGLTF(url)
+
+  const model = useMemo(() => {
+    const instance = clone(scene)
+    instance.traverse((child) => {
+      const mesh = child as Mesh
+      if (!mesh.isMesh) return
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      mesh.material = slotMaterial(mesh.material, color)
+    })
+    return instance
+  }, [scene, color])
+
+  return (
+    <group position={position} scale={scale} rotation={rotation}>
+      <primitive object={model} />
+    </group>
+  )
+}
+
+function firstMesh(source: Group) {
+  let found: Mesh | null = null
+  source.traverse((child) => {
+    const mesh = child as Mesh
+    if (!found && mesh.isMesh) found = mesh
+  })
+  return found
+}
+
+function splitGeometryByX(source: BufferGeometry, side: -1 | 1) {
+  const geometry = source.index ? source.toNonIndexed() : source.clone()
+  const position = geometry.getAttribute('position')
+  const normal = geometry.getAttribute('normal')
+  const uv = geometry.getAttribute('uv')
+
+  const positions: number[] = []
+  const normals: number[] = []
+  const uvs: number[] = []
+
+  for (let i = 0; i < position.count; i += 3) {
+    const cx =
+      (position.getX(i) + position.getX(i + 1) + position.getX(i + 2)) / 3
+
+    if ((side < 0 && cx >= 0) || (side > 0 && cx <= 0)) continue
+
+    for (let j = 0; j < 3; j += 1) {
+      const index = i + j
+      positions.push(
+        position.getX(index),
+        position.getY(index),
+        position.getZ(index),
+      )
+      if (normal) {
+        normals.push(
+          normal.getX(index),
+          normal.getY(index),
+          normal.getZ(index),
+        )
+      }
+      if (uv) {
+        uvs.push(uv.getX(index), uv.getY(index))
+      }
+    }
+  }
+
+  const result = new BufferGeometry()
+  result.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  if (normals.length) {
+    result.setAttribute('normal', new Float32BufferAttribute(normals, 3))
+  } else {
+    result.computeVertexNormals()
+  }
+  if (uvs.length) result.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
+  result.computeBoundingBox()
+
+  const center = new Vector3()
+  result.boundingBox?.getCenter(center)
+  result.translate(-center.x, -center.y, -center.z)
+  result.computeBoundingSphere()
+
+  geometry.dispose()
+  return result
+}
+
+function PairedSlot({
+  url,
+  color,
+  leftPosition,
+  rightPosition,
+  scale,
+  rotation = [0, 0, 0],
+}: {
+  url: string
+  color: string
+  leftPosition: [number, number, number]
+  rightPosition: [number, number, number]
+  scale: [number, number, number]
+  rotation?: [number, number, number]
+}) {
+  const { scene } = useGLTF(url)
+  const source = useMemo(() => firstMesh(scene), [scene])
+
+  const data = useMemo(() => {
+    if (!source) return null
+    return {
+      left: splitGeometryByX(source.geometry, -1),
+      right: splitGeometryByX(source.geometry, 1),
+      leftMaterial: slotMaterial(source.material, color),
+      rightMaterial: slotMaterial(source.material, color),
+    }
+  }, [source, color])
+
+  useEffect(() => {
+    return () => {
+      data?.left.dispose()
+      data?.right.dispose()
+      data?.leftMaterial.dispose()
+      data?.rightMaterial.dispose()
+    }
+  }, [data])
+
+  if (!data) return null
+
+  return (
+    <>
+      <mesh
+        geometry={data.left}
+        material={data.leftMaterial}
+        position={leftPosition}
+        scale={scale}
+        rotation={rotation}
+        castShadow
+        receiveShadow
+      />
+      <mesh
+        geometry={data.right}
+        material={data.rightMaterial}
+        position={rightPosition}
+        scale={scale}
+        rotation={rotation}
+        castShadow
+        receiveShadow
+      />
+    </>
+  )
+}
+
 function Mouth({ faceId }: { faceId: string }) {
   const z = 0.269
 
   if (faceId === 'face-surprised-3d') {
     return (
-      <mesh position={[0, 0.716, z]} rotation={[0, 0, 0]}>
+      <mesh position={[0, 0.716, z]}>
         <torusGeometry args={[0.017, 0.0052, 12, 28]} />
         <meshStandardMaterial color="#33221b" roughness={0.9} />
       </mesh>
@@ -305,7 +489,11 @@ function Hair({
           <sphereGeometry args={[0.273, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2.05]} />
           <meshStandardMaterial color={hairColor} roughness={0.88} />
         </mesh>
-        <mesh position={[-0.210, 0.930, 0.105]} scale={[0.55, 1.20, 0.72]} rotation={[0, 0, 0.18]}>
+        <mesh
+          position={[-0.210, 0.930, 0.105]}
+          scale={[0.55, 1.20, 0.72]}
+          rotation={[0, 0, 0.18]}
+        >
           <sphereGeometry args={[0.090, 20, 16]} />
           <meshStandardMaterial color={hairColor} roughness={0.88} />
         </mesh>
@@ -321,47 +509,18 @@ function Hair({
   )
 }
 
-function HardHat({
-  headwearId,
-  helmetColor,
-}: {
-  headwearId: string | null
-  helmetColor: string
-}) {
-  if (!headwearId || headwearId === 'helmet-none') return null
-
-  return (
-    <group>
-      <mesh position={[0, 0.928, -0.010]}>
-        <sphereGeometry args={[0.258, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color={helmetColor} roughness={0.82} />
-      </mesh>
-      <mesh position={[0, 0.925, 0.010]}>
-        <cylinderGeometry args={[0.292, 0.292, 0.025, 42]} />
-        <meshStandardMaterial color={helmetColor} roughness={0.82} />
-      </mesh>
-      <mesh position={[0, 1.100, -0.010]} scale={[0.13, 1, 0.78]}>
-        <boxGeometry args={[0.055, 0.085, 0.250]} />
-        <meshStandardMaterial color={helmetColor} roughness={0.78} />
-      </mesh>
-    </group>
-  )
-}
-
 function ProceduralHead({
   skinColor,
   faceId,
   hairStyleId,
   hairColor,
-  headwearId,
-  helmetColor,
+  helmetActive,
 }: {
   skinColor: string
   faceId: string
   hairStyleId: string
   hairColor: string
-  headwearId: string | null
-  helmetColor: string
+  helmetActive: boolean
 }) {
   const surprised = faceId === 'face-surprised-3d'
   return (
@@ -371,11 +530,17 @@ function ProceduralHead({
         <meshStandardMaterial color={skinColor} roughness={0.92} />
       </mesh>
 
-      <mesh position={[-0.061, 0.858, 0.245]} scale={[1, surprised ? 1.17 : 1.08, 0.75]}>
+      <mesh
+        position={[-0.061, 0.858, 0.245]}
+        scale={[1, surprised ? 1.17 : 1.08, 0.75]}
+      >
         <sphereGeometry args={[0.052, 24, 18]} />
         <meshStandardMaterial color="#F6F5F1" roughness={0.94} />
       </mesh>
-      <mesh position={[0.061, 0.858, 0.245]} scale={[1, surprised ? 1.17 : 1.08, 0.75]}>
+      <mesh
+        position={[0.061, 0.858, 0.245]}
+        scale={[1, surprised ? 1.17 : 1.08, 0.75]}
+      >
         <sphereGeometry args={[0.052, 24, 18]} />
         <meshStandardMaterial color="#F6F5F1" roughness={0.94} />
       </mesh>
@@ -391,8 +556,7 @@ function ProceduralHead({
 
       <Brows faceId={faceId} />
       <Mouth faceId={faceId} />
-      <Hair hairStyleId={hairStyleId} hairColor={hairColor} />
-      <HardHat headwearId={headwearId} helmetColor={helmetColor} />
+      {!helmetActive && <Hair hairStyleId={hairStyleId} hairColor={hairColor} />}
     </group>
   )
 }
@@ -410,13 +574,19 @@ function Accessory({ accessoryId }: { accessoryId: string | null }) {
           <meshStandardMaterial color="#5B3828" roughness={0.9} />
         </mesh>
       )}
-      <mesh position={[pouchOnly ? 0.155 : -0.155, 0.380, 0.178]} rotation={[0, 0, pouchOnly ? -0.10 : 0.10]}>
+      <mesh
+        position={[pouchOnly ? 0.155 : -0.155, 0.380, 0.178]}
+        rotation={[0, 0, pouchOnly ? -0.10 : 0.10]}
+      >
         <boxGeometry args={[0.090, 0.115, 0.045]} />
         <meshStandardMaterial color="#6B442C" roughness={0.92} />
       </mesh>
       {!pouchOnly && (
         <>
-          <mesh position={[0.155, 0.385, 0.175]} rotation={[0, 0, -0.10]}>
+          <mesh
+            position={[0.155, 0.385, 0.175]}
+            rotation={[0, 0, -0.10]}
+          >
             <boxGeometry args={[0.082, 0.100, 0.045]} />
             <meshStandardMaterial color="#6B442C" roughness={0.92} />
           </mesh>
@@ -443,6 +613,10 @@ function AvatarAssembly({
   shoeColor,
   accessoryId,
   headwearId,
+  topId,
+  bottomId,
+  glovesId,
+  shoesId,
 }: {
   modelUrl: string
   skinColor: string
@@ -456,7 +630,13 @@ function AvatarAssembly({
   shoeColor: string
   accessoryId: string | null
   headwearId: string | null
+  topId: string | null
+  bottomId: string | null
+  glovesId: string | null
+  shoesId: string | null
 }) {
+  const helmetActive = Boolean(headwearId && headwearId !== 'helmet-none')
+
   return (
     <group scale={AVATAR_ROOT_SCALE} position={[0, -AVATAR_HEIGHT_METERS / 2, 0]}>
       <ProductionModel
@@ -467,14 +647,62 @@ function AvatarAssembly({
         gloveColor={gloveColor}
         shoeColor={shoeColor}
       />
+
       <ProceduralHead
         skinColor={skinColor}
         faceId={faceId}
         hairStyleId={hairStyleId}
         hairColor={hairColor}
-        headwearId={headwearId}
-        helmetColor={helmetColor}
+        helmetActive={helmetActive}
       />
+
+      {helmetActive && (
+        <StaticSlot
+          url={SLOT_URLS.headwear}
+          color={helmetColor}
+          position={[0, 0.965, -0.005]}
+          scale={[0.36, 0.23, 0.27]}
+        />
+      )}
+
+      {topId && (
+        <StaticSlot
+          url={SLOT_URLS.top}
+          color={topColor}
+          position={[0, 0.505, 0]}
+          scale={[0.31, 0.34, 0.32]}
+        />
+      )}
+
+      {bottomId && (
+        <StaticSlot
+          url={SLOT_URLS.bottom}
+          color={bottomColor}
+          position={[0, 0.292, 0]}
+          scale={[0.25, 0.22, 0.28]}
+        />
+      )}
+
+      {glovesId && (
+        <PairedSlot
+          url={SLOT_URLS.gloves}
+          color={gloveColor}
+          leftPosition={[-0.292, 0.415, 0.010]}
+          rightPosition={[0.292, 0.415, 0.010]}
+          scale={[0.145, 0.135, 0.165]}
+        />
+      )}
+
+      {shoesId && (
+        <PairedSlot
+          url={SLOT_URLS.shoes}
+          color={shoeColor}
+          leftPosition={[-0.116, 0.074, 0.018]}
+          rightPosition={[0.116, 0.074, 0.018]}
+          scale={[0.165, 0.22, 0.152]}
+        />
+      )}
+
       <Accessory accessoryId={accessoryId} />
     </group>
   )
@@ -505,6 +733,10 @@ export default function AvatarScene({
   shoeColor,
   accessoryId,
   headwearId,
+  topId,
+  bottomId,
+  glovesId,
+  shoesId,
 }: {
   modelUrl: string
   skinColor: string
@@ -518,12 +750,21 @@ export default function AvatarScene({
   shoeColor: string
   accessoryId: string | null
   headwearId: string | null
+  topId: string | null
+  bottomId: string | null
+  glovesId: string | null
+  shoesId: string | null
 }) {
   return (
     <Canvas
       shadows
       dpr={[1, 1.75]}
-      camera={{ position: [0, 0, CAMERA_DISTANCE], fov: 34, near: 0.01, far: 100 }}
+      camera={{
+        position: [0, 0, CAMERA_DISTANCE],
+        fov: 34,
+        near: 0.01,
+        far: 100,
+      }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#E7E3E0']} />
@@ -555,6 +796,10 @@ export default function AvatarScene({
           shoeColor={shoeColor}
           accessoryId={accessoryId}
           headwearId={headwearId}
+          topId={topId}
+          bottomId={bottomId}
+          glovesId={glovesId}
+          shoesId={shoesId}
         />
       </Suspense>
 
