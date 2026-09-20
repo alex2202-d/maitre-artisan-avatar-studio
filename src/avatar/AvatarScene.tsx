@@ -321,20 +321,51 @@ function Hair({
   )
 }
 
+function HardHat({
+  headwearId,
+  helmetColor,
+}: {
+  headwearId: string | null
+  helmetColor: string
+}) {
+  if (!headwearId || headwearId === 'helmet-none') return null
+
+  return (
+    <group>
+      <mesh position={[0, 0.928, -0.010]}>
+        <sphereGeometry args={[0.258, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={helmetColor} roughness={0.82} />
+      </mesh>
+      <mesh position={[0, 0.925, 0.010]}>
+        <cylinderGeometry args={[0.292, 0.292, 0.025, 42]} />
+        <meshStandardMaterial color={helmetColor} roughness={0.82} />
+      </mesh>
+      <mesh position={[0, 1.100, -0.010]} scale={[0.13, 1, 0.78]}>
+        <boxGeometry args={[0.055, 0.085, 0.250]} />
+        <meshStandardMaterial color={helmetColor} roughness={0.78} />
+      </mesh>
+    </group>
+  )
+}
+
 function ProceduralHead({
   skinColor,
   faceId,
   hairStyleId,
   hairColor,
+  headwearId,
+  helmetColor,
 }: {
   skinColor: string
   faceId: string
   hairStyleId: string
   hairColor: string
+  headwearId: string | null
+  helmetColor: string
 }) {
   const surprised = faceId === 'face-surprised-3d'
   return (
-    <group>
+    <group position={[0, 0, 0.025]}>
       <mesh position={[0, 0.835, 0]}>
         <sphereGeometry args={[0.268, 42, 32]} />
         <meshStandardMaterial color={skinColor} roughness={0.92} />
@@ -361,6 +392,7 @@ function ProceduralHead({
       <Brows faceId={faceId} />
       <Mouth faceId={faceId} />
       <Hair hairStyleId={hairStyleId} hairColor={hairColor} />
+      <HardHat headwearId={headwearId} helmetColor={helmetColor} />
     </group>
   )
 }
@@ -410,6 +442,7 @@ function AvatarAssembly({
   gloveColor,
   shoeColor,
   accessoryId,
+  headwearId,
 }: {
   modelUrl: string
   skinColor: string
@@ -422,6 +455,7 @@ function AvatarAssembly({
   gloveColor: string
   shoeColor: string
   accessoryId: string | null
+  headwearId: string | null
 }) {
   return (
     <group scale={AVATAR_ROOT_SCALE} position={[0, -AVATAR_HEIGHT_METERS / 2, 0]}>
@@ -438,6 +472,8 @@ function AvatarAssembly({
         faceId={faceId}
         hairStyleId={hairStyleId}
         hairColor={hairColor}
+        headwearId={headwearId}
+        helmetColor={helmetColor}
       />
       <Accessory accessoryId={accessoryId} />
     </group>
@@ -468,6 +504,7 @@ export default function AvatarScene({
   gloveColor,
   shoeColor,
   accessoryId,
+  headwearId,
 }: {
   modelUrl: string
   skinColor: string
@@ -480,6 +517,7 @@ export default function AvatarScene({
   gloveColor: string
   shoeColor: string
   accessoryId: string | null
+  headwearId: string | null
 }) {
   return (
     <Canvas
@@ -516,6 +554,7 @@ export default function AvatarScene({
           gloveColor={gloveColor}
           shoeColor={shoeColor}
           accessoryId={accessoryId}
+          headwearId={headwearId}
         />
       </Suspense>
 
