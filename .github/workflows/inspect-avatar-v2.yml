@@ -6,11 +6,17 @@ on:
     paths:
       - '.github/workflows/inspect-avatar-v2.yml'
       - '.github/scripts/inspect-glb.mjs'
+      - 'public/assets/avatar/v2/outfit01/**'
 
 jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect rigged avatar structure
-        run: node .github/scripts/inspect-glb.mjs public/assets/avatar/v2/base/avatar_workwear_v2_rigged.glb
+      - name: Inspect rigged avatar and modular outfit pieces
+        run: |
+          for file in             public/assets/avatar/v2/base/avatar_workwear_v2_rigged.glb             public/assets/avatar/v2/outfit01/headwear_hardhat_v2.glb             public/assets/avatar/v2/outfit01/top_workwear_v2.glb             public/assets/avatar/v2/outfit01/bottom_workshort_v2.glb             public/assets/avatar/v2/outfit01/gloves_work_v2.glb             public/assets/avatar/v2/outfit01/shoes_work_boots_v2.glb
+          do
+            echo "===== INSPECT $file ====="
+            node .github/scripts/inspect-glb.mjs "$file"
+          done
