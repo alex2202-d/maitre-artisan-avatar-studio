@@ -27,17 +27,17 @@ export const defaultAvatarConfigV3: AvatarConfigV3 = {
   version: 3,
   bodyType: 'male',
   skinToneId: 'skin-medium',
-  faceId: 'face-base-v3',
+  faceId: 'face-classic-3d',
   hairStyleId: 'hair-none',
   hairColorId: 'hair-dark',
   outfitPresetId: 'outfit-chantier',
   outfit: {
-    headwearId: null,
-    topId: null,
-    bottomId: null,
-    glovesId: null,
-    shoesId: null,
-    accessoryId: null,
+    headwearId: 'helmet-yellow',
+    topId: 'top-blue-v3',
+    bottomId: 'bottom-blue-v3',
+    glovesId: 'gloves-yellow-v3',
+    shoesId: 'shoes-brown-v3',
+    accessoryId: 'accessory-none',
   },
 }
 
@@ -46,8 +46,9 @@ function normalizeV3(parsed: Partial<AvatarConfigV3>): AvatarConfigV3 {
     ...defaultAvatarConfigV3,
     ...parsed,
     version: 3,
-    faceId: 'face-base-v3',
+    faceId: parsed.faceId ?? defaultAvatarConfigV3.faceId,
     hairStyleId: parsed.hairStyleId ?? defaultAvatarConfigV3.hairStyleId,
+    hairColorId: parsed.hairColorId ?? defaultAvatarConfigV3.hairColorId,
     outfitPresetId: parsed.outfitPresetId ?? defaultAvatarConfigV3.outfitPresetId,
     outfit: {
       ...defaultAvatarConfigV3.outfit,
@@ -58,22 +59,9 @@ function normalizeV3(parsed: Partial<AvatarConfigV3>): AvatarConfigV3 {
 
 function migrateV2(raw: string): AvatarConfigV3 | null {
   try {
-    const parsed = JSON.parse(raw) as {
-      version?: number
-      bodyType?: AvatarGender
-      skinToneId?: string
-      hairStyleId?: string
-      hairColorId?: string
-    }
-
+    const parsed = JSON.parse(raw) as Partial<AvatarConfigV3> & { version?: number }
     if (parsed.version !== 2) return null
-
-    return normalizeV3({
-      bodyType: parsed.bodyType,
-      skinToneId: parsed.skinToneId,
-      hairStyleId: parsed.hairStyleId,
-      hairColorId: parsed.hairColorId,
-    })
+    return normalizeV3(parsed)
   } catch {
     return null
   }
@@ -93,7 +81,7 @@ export function loadAvatarConfigV3(): AvatarConfigV3 {
       if (migrated) return migrated
     }
   } catch {
-    // Fall through to the production defaults.
+    // Fall through to defaults.
   }
 
   return defaultAvatarConfigV3
