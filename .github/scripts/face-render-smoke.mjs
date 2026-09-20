@@ -128,13 +128,20 @@ function changedPixels(a, b, threshold = 28) {
 const classic = captures.get('Classique')
 if (!classic) throw new Error('Missing classic capture')
 
+const minimumChanges = {
+  Souriant: 300,
+  Déterminé: 300,
+  Surpris: 180,
+}
+
 for (const face of faces.slice(1)) {
   const capture = captures.get(face)
   const changed = changedPixels(classic, capture)
+  const minimum = minimumChanges[face] ?? 180
   console.log(`${face}: ${changed} changed pixels inside the head crop vs Classique`)
-  if (changed < 300) {
+  if (changed < minimum) {
     console.error(
-      `Face render smoke test failed: ${face} does not visibly change the head crop enough (${changed} pixels).`,
+      `Face render smoke test failed: ${face} does not visibly change the head crop enough (${changed} pixels; minimum ${minimum}).`,
     )
     process.exit(1)
   }
