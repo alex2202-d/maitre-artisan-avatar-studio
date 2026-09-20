@@ -36,11 +36,6 @@ export default function App() {
     [config.skinToneId],
   )
 
-  const faceAssetUrl = useMemo(
-    () => `/assets/avatar/v2/faces/projected/${config.faceId}.svg`,
-    [config.faceId],
-  )
-
   const topColor = useMemo(
     () => topOptions.find((item) => item.id === config.outfit.topId)?.color ?? topOptions[0].color,
     [config.outfit.topId],
@@ -152,7 +147,6 @@ export default function App() {
           <AvatarScene
             key={`${skinModelUrl}:${config.faceId}:${config.outfit.topId}:${config.outfit.bottomId}`}
             modelUrl={skinModelUrl}
-            faceAssetUrl={faceAssetUrl}
             kind="character"
             skinColor={skinColor}
             faceId={config.faceId}
