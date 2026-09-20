@@ -56,10 +56,10 @@ await page.waitForTimeout(500)
 const electrician = await capture('wardrobe-2d-electrician')
 if (changedPixels(hair, electrician, 24) < 1500) throw new Error('Outfit preset did not visibly change')
 
-const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('maitre-artisan-avatar-2d-v4') || '{}'))
+const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('maitre-artisan-avatar-2d-v5') || '{}'))
 if (saved.expression !== 'surprised') throw new Error('Expression is not persisted')
 if (saved.hair !== 'spiky') throw new Error('Hair is not persisted')
-if (saved.top !== 'tee-navy') throw new Error('Outfit is not persisted')
+if (saved.top !== 'jacket-blue') throw new Error('Outfit is not persisted')
 
 await browser.close()
 if (errors.length) {
