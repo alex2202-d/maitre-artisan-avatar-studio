@@ -4,6 +4,8 @@ import Avatar2D, { type Avatar2DConfig } from './avatar/Avatar2D'
 type CategoryId = 'avatar' | 'skin' | 'outfit' | 'expression' | 'hair' | 'headwear' | 'top' | 'bottom' | 'gloves' | 'shoes' | 'accessory'
 type Option = { id: string; label: string; note?: string }
 
+const STORAGE_KEY = 'maitre-artisan-avatar-2d-v5'
+
 const categories: Array<{ id: CategoryId; label: string; icon: string }> = [
   { id: 'avatar', label: 'Avatar', icon: '⌂' },
   { id: 'skin', label: 'Peau', icon: '●' },
@@ -38,10 +40,8 @@ const hairOptions: Option[] = [
   { id: 'side', label: 'Côté' },
   { id: 'spiky', label: 'Ébouriffé' },
   { id: 'curly', label: 'Bouclé' },
-  { id: 'bob', label: 'Carré' },
-  { id: 'middle', label: 'Raie milieu' },
   { id: 'classic', label: 'Classique' },
-  { id: 'bun', label: 'Chignon' },
+  { id: 'bob', label: 'Carré' },
 ]
 const headwearOptions: Option[] = [
   { id: 'none', label: 'Aucun' },
@@ -62,8 +62,8 @@ const topOptions: Option[] = [
 ]
 const bottomOptions: Option[] = [
   { id: 'shorts-gray', label: 'Short gris' },
-  { id: 'pants-blue', label: 'Pantalon bleu' },
   { id: 'overalls-blue', label: 'Salopette bleue' },
+  { id: 'pants-blue', label: 'Pantalon bleu' },
   { id: 'cargo-olive', label: 'Cargo atelier' },
   { id: 'painter-pants', label: 'Pantalon peintre' },
   { id: 'cargo-dark', label: 'Cargo sombre' },
@@ -103,10 +103,10 @@ const hairColorOptions: Option[] = [
 
 const outfitPresets: Array<Option & { config: Partial<Avatar2DConfig> }> = [
   { id: 'chantier', label: 'Chantier', note: 'Salopette bleue + casque jaune', config: { top: 'tee-navy', bottom: 'overalls-blue', gloves: 'yellow', shoes: 'boots-brown', headwear: 'hardhat-yellow', accessory: 'none' } },
-  { id: 'electricien', label: 'Électricien', note: 'Bleu + bandes réfléchissantes', config: { top: 'jacket-blue', bottom: 'pants-blue', gloves: 'yellow', shoes: 'boots-black', headwear: 'hardhat-blue', accessory: 'belt-electric' } },
-  { id: 'technicien', label: 'Technicien CVC', note: 'Atelier olive + outils', config: { top: 'jacket-olive', bottom: 'cargo-olive', gloves: 'black', shoes: 'boots-brown', headwear: 'none', accessory: 'belt-mechanic' } },
-  { id: 'peintre', label: 'Peintre', note: 'Blanc + accessoires peinture', config: { top: 'painter-top', bottom: 'painter-pants', gloves: 'white', shoes: 'boots-white', headwear: 'cap-white', accessory: 'belt-painter' } },
-  { id: 'voirie', label: 'Voirie', note: 'Orange haute visibilité', config: { top: 'hivis-orange', bottom: 'cargo-dark', gloves: 'orange', shoes: 'boots-orange', headwear: 'hardhat-orange', accessory: 'pouch-orange' } },
+  { id: 'electricien', label: 'Électricien', note: 'Bleu + casque + outillage', config: { top: 'jacket-blue', bottom: 'pants-blue', gloves: 'black', shoes: 'boots-black', headwear: 'hardhat-blue', accessory: 'belt-electric' } },
+  { id: 'technicien', label: 'Technicien CVC', note: 'Atelier olive + ceinture outils', config: { top: 'jacket-olive', bottom: 'cargo-olive', gloves: 'black', shoes: 'boots-brown', headwear: 'none', accessory: 'belt-mechanic' } },
+  { id: 'peintre', label: 'Peintre', note: 'Blanc + équipement peintre', config: { top: 'painter-top', bottom: 'painter-pants', gloves: 'white', shoes: 'boots-white', headwear: 'cap-white', accessory: 'belt-painter' } },
+  { id: 'voirie', label: 'Voirie', note: 'Orange haute visibilité', config: { top: 'hivis-orange', bottom: 'cargo-dark', gloves: 'orange', shoes: 'boots-orange', headwear: 'hardhat-orange', accessory: 'harness' } },
 ]
 
 const defaultConfig: Avatar2DConfig = {
@@ -143,14 +143,14 @@ function configKey(category: CategoryId): keyof Avatar2DConfig | null {
   return map[category] ?? null
 }
 
-function MiniAvatar({ config }: { config: Avatar2DConfig }) {
-  return <Avatar2D config={config} className="mini-avatar" />
+function MiniAvatar({ config, preset }: { config: Avatar2DConfig; preset?: string | null }) {
+  return <Avatar2D config={config} preset={preset} className="mini-avatar" />
 }
 
 export default function App() {
   const [config, setConfig] = useState<Avatar2DConfig>(() => {
     try {
-      const raw = localStorage.getItem('maitre-artisan-avatar-2d')
+      const raw = localStorage.getItem(STORAGE_KEY)
       return raw ? { ...defaultConfig, ...JSON.parse(raw) } : defaultConfig
     } catch { return defaultConfig }
   })
@@ -159,7 +159,7 @@ export default function App() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    localStorage.setItem('maitre-artisan-avatar-2d', JSON.stringify(config))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   }, [config])
 
   const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
@@ -214,7 +214,7 @@ export default function App() {
   }
 
   function save() {
-    localStorage.setItem('maitre-artisan-avatar-2d', JSON.stringify(config))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
     notify('Avatar enregistré')
   }
 
@@ -241,7 +241,7 @@ export default function App() {
         <div className="stage-card">
           <div className="stage-message left">Un artisan<br/>d’aujourd’hui<br/><b>bâtit un monde<br/>meilleur !</b></div>
           <div className="stage-message right">Crée.<br/>Équipe.<br/>Avance.</div>
-          <Avatar2D config={config} className="main-avatar" />
+          <Avatar2D config={config} preset={activePreset} className="main-avatar" />
           <div className="stage-actions">
             <button onClick={randomize}>◈ Avatar aléatoire</button>
             <span>Vestiaire 2D interactif</span>
@@ -273,7 +273,7 @@ export default function App() {
                 const preview = { ...config, ...preset.config }
                 return (
                   <button key={preset.id} className={'preset-card ' + (activePreset === preset.id ? 'active' : '')} onClick={() => applyPreset(preset.id)}>
-                    <div className="preset-preview"><MiniAvatar config={preview} /></div>
+                    <div className="preset-preview"><MiniAvatar config={preview} preset={preset.id} /></div>
                     <div><strong>{preset.label}</strong><small>{preset.note}</small></div>
                   </button>
                 )
