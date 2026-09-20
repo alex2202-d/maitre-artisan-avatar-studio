@@ -26,7 +26,10 @@ const ITEMS_ATLAS = '/assets/avatar2d/wardrobe-items-v2.webp'
 const BASE_IMAGE = '/assets/avatar2d/base-neutral.png'
 
 const CELL = 256
-const ATLAS_SIZE = 1280
+const atlasDims: Record<SpriteSource, { width: number; height: number }> = {
+  core: { width: 1280, height: 768 },
+  items: { width: 1280, height: 1280 },
+}
 
 const sprites: Record<string, SpriteDef> = {
   'expression-neutral': { source: 'core', col: 0, row: 0 },
@@ -114,6 +117,8 @@ function Sprite({
   const x = def.col * CELL
   const y = def.row * CELL
   const source = spriteHref(def.source)
+  const dims = atlasDims[def.source]
+  const clippedStyle: CSSProperties = { ...style, overflow: 'hidden', display: 'block' }
 
   if (half) {
     const halfWidth = CELL / 2
@@ -121,17 +126,17 @@ function Sprite({
     return (
       <svg
         className={className}
-        style={style}
-        viewBox={`${offsetX} 0 ${halfWidth} ${CELL}`}
+        style={clippedStyle}
+        viewBox={`0 0 ${halfWidth} ${CELL}`}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
         <image
           href={source}
-          x={-x}
+          x={-(x + offsetX)}
           y={-y}
-          width={ATLAS_SIZE}
-          height={ATLAS_SIZE}
+          width={dims.width}
+          height={dims.height}
           preserveAspectRatio="none"
         />
       </svg>
@@ -141,7 +146,7 @@ function Sprite({
   return (
     <svg
       className={className}
-      style={style}
+      style={clippedStyle}
       viewBox={`0 0 ${CELL} ${CELL}`}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
@@ -150,8 +155,8 @@ function Sprite({
         href={source}
         x={-x}
         y={-y}
-        width={ATLAS_SIZE}
-        height={ATLAS_SIZE}
+        width={dims.width}
+        height={dims.height}
         preserveAspectRatio="none"
       />
     </svg>
@@ -161,7 +166,6 @@ function Sprite({
 const layerBase: CSSProperties = {
   position: 'absolute',
   pointerEvents: 'none',
-  overflow: 'visible',
 }
 
 function idOrNull(prefix: string, value: string) {
