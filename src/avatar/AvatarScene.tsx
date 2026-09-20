@@ -22,6 +22,7 @@ function createWardrobeMaterial(
   skinColor: string,
   faceId: string,
   debugBind: boolean,
+  debugFace: boolean,
 ) {
   const standard = material as MeshStandardMaterial
   if (!standard.isMeshStandardMaterial) return material
@@ -259,10 +260,24 @@ float maSegmentMask(vec2 p, vec2 a, vec2 b, float width) {
         );`,
       )
     }
+
+    if (debugFace) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+        gl_FragColor = vec4(
+          avatarExpression < 0.5 ? vec3(1.0, 0.0, 0.0) :
+          avatarExpression < 1.5 ? vec3(0.0, 1.0, 0.0) :
+          avatarExpression < 2.5 ? vec3(0.0, 0.0, 1.0) :
+                                   vec3(1.0, 0.0, 1.0),
+          1.0
+        );`,
+      )
+    }
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-face-slot-v1-${topColor}-${bottomColor}-${skinColor}-${faceId}-${debugBind}`
+    `ma-wardrobe-face-slot-v1-${topColor}-${bottomColor}-${skinColor}-${faceId}-${debugBind}-${debugFace}`
   patched.needsUpdate = true
   return patched
 }
@@ -274,6 +289,7 @@ function ProductionModel({
   skinColor,
   faceId,
   debugBind,
+  debugFace,
 }: {
   url: string
   topColor: string
@@ -281,6 +297,7 @@ function ProductionModel({
   skinColor: string
   faceId: string
   debugBind: boolean
+  debugFace: boolean
 }) {
   const { scene } = useGLTF(url)
 
@@ -303,6 +320,7 @@ function ProductionModel({
             skinColor,
             faceId,
             debugBind,
+            debugFace,
           ),
         )
       } else if (mesh.material) {
@@ -313,12 +331,13 @@ function ProductionModel({
           skinColor,
           faceId,
           debugBind,
+          debugFace,
         )
       }
     })
 
     return instance
-  }, [scene, topColor, bottomColor, skinColor, faceId, debugBind])
+  }, [scene, topColor, bottomColor, skinColor, faceId, debugBind, debugFace])
 
   useEffect(() => {
     return () => {
@@ -372,9 +391,10 @@ export default function AvatarScene({
   skinColor?: string
   faceId?: string
 }) {
-  const debugBind =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('debugBind') === '1'
+  const debugParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const debugBind = debugParams?.get('debugBind') === '1'
+  const debugFace = debugParams?.get('debugFace') === '1'
 
   return (
     <Canvas
@@ -406,6 +426,7 @@ export default function AvatarScene({
           skinColor={skinColor}
           faceId={faceId}
           debugBind={debugBind}
+          debugFace={debugFace}
         />
       </Suspense>
 
