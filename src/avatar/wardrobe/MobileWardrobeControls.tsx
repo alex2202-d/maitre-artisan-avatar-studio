@@ -112,7 +112,7 @@ export default function MobileWardrobeControls({
             key={item.id}
             type="button"
             className={config.hairStyleId === item.id ? 'mobile-outfit-choice active' : 'mobile-outfit-choice'}
-            onClick={() => onUpdateConfig({ hairStyleId: item.id })}
+            onClick={() => onUpdateConfig({ hairStyleId: item.id, outfit: { ...config.outfit, headwearId: item.id === 'hair-none' ? config.outfit.headwearId : 'helmet-none' } })}
             aria-label={item.label}
             aria-pressed={config.hairStyleId === item.id}
           ><small>{item.label}</small></button>
