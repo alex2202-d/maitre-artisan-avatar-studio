@@ -272,13 +272,13 @@ function StaticSlot({
   )
 }
 
-function firstMesh(source: Group) {
+function firstMesh(source: Group): Mesh | null {
   let found: Mesh | null = null
   source.traverse((child) => {
     const mesh = child as Mesh
     if (!found && mesh.isMesh) found = mesh
   })
-  return found
+  return found as Mesh | null
 }
 
 function splitGeometryByX(source: BufferGeometry, side: -1 | 1) {
