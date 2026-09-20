@@ -195,6 +195,52 @@ for (const [meshIndex, mesh] of meshes.entries()) {
   }
 }
 
+
+console.log('=== GEOMETRY CONNECTED COMPONENTS ===')
+function quantKey(p, eps=1e-5) {
+  return [Math.round(p[0]/eps),Math.round(p[1]/eps),Math.round(p[2]/eps)].join(',')
+}
+for (const [meshIndex, mesh] of meshes.entries()) {
+  for (const [primitiveIndex, primitive] of (mesh.primitives ?? []).entries()) {
+    const attrs=primitive.attributes ?? {}
+    if (attrs.POSITION===undefined || primitive.indices===undefined) continue
+    const positions=readAccessor(attrs.POSITION)
+    const indices=readAccessor(primitive.indices).map(v=>v[0])
+    const parent=new Array(positions.length)
+    for(let i=0;i<parent.length;i++) parent[i]=i
+    const find=(x)=>{ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x] } return x }
+    const union=(a,b)=>{ a=find(a); b=find(b); if(a!==b) parent[b]=a }
+
+    // Unify duplicate vertices created by UV seams/normals before triangle adjacency.
+    const byPosition=new Map()
+    for(let i=0;i<positions.length;i++){
+      const k=quantKey(positions[i])
+      const prev=byPosition.get(k)
+      if(prev===undefined) byPosition.set(k,i)
+      else union(i,prev)
+    }
+    for(let i=0;i+2<indices.length;i+=3){
+      const a=indices[i],b=indices[i+1],c=indices[i+2]
+      union(a,b); union(b,c); union(c,a)
+    }
+
+    const comps=new Map()
+    for(let i=0;i<positions.length;i++){
+      const root=find(i)
+      if(!comps.has(root)) comps.set(root,[])
+      comps.get(root).push(i)
+    }
+    const summary=[...comps.values()].map(ids=>{
+      const rows=ids.map(i=>positions[i])
+      const b=bounds(rows,3)
+      const center=b ? b.min.map((v,j)=>(v+b.max[j])/2) : null
+      const size=b ? b.min.map((v,j)=>b.max[j]-v) : null
+      return {vertices:ids.length,bounds:b,center,size,sampleIndices:ids.slice(0,12)}
+    }).sort((a,b)=>b.vertices-a.vertices)
+    console.log(JSON.stringify({meshIndex,primitiveIndex,componentCount:summary.length,components:summary.slice(0,40)}))
+  }
+}
+
 console.log('=== ALL NODE NAMES ===')
 nodes.forEach((node, i) => {
   console.log(JSON.stringify({
