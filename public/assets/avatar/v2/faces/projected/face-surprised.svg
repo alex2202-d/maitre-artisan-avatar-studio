@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <g fill="#F8F7F4">
-    <ellipse cx="145" cy="158" rx="76" ry="72"/>
-    <ellipse cx="367" cy="158" rx="76" ry="72"/>
+    <ellipse cx="155" cy="151" rx="76" ry="74"/>
+    <ellipse cx="357" cy="151" rx="76" ry="74"/>
   </g>
   <g fill="#3A261D">
-    <ellipse cx="145" cy="158" rx="15" ry="17"/>
-    <ellipse cx="367" cy="158" rx="15" ry="17"/>
+    <ellipse cx="155" cy="151" rx="15" ry="18"/>
+    <ellipse cx="357" cy="151" rx="15" ry="18"/>
   </g>
-  <ellipse cx="256" cy="342" rx="34" ry="42" fill="#3A261D"/>
+  <ellipse cx="256" cy="378" rx="34" ry="43" fill="#3A261D"/>
 </svg>
