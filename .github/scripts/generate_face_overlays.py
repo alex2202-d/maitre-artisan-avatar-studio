@@ -196,6 +196,11 @@ def detect_landmarks(source, face_map):
 
     pupil_y = percentile([p[1] for p in dark_eye], 0.5) if dark_eye else (left["cy"] + right["cy"]) / 2
     mouth_y = percentile([p[1] for p in dark_mouth], 0.5) if dark_mouth else 0.725
+    eye_rows = whites["left"] + whites["right"]
+    eye_z = percentile([p[2] for p in eye_rows], 0.5) if eye_rows else 0.20
+    eye_z_min = percentile([p[2] for p in eye_rows], 0.05) if eye_rows else 0.15
+    eye_z_max = percentile([p[2] for p in eye_rows], 0.95) if eye_rows else 0.26
+    mouth_z = percentile([p[2] for p in dark_mouth], 0.5) if dark_mouth else 0.20
 
     # Stabilise the automatically detected centres around the symmetric avatar.
     eye_y = (left["cy"] + right["cy"]) / 2
@@ -210,6 +215,10 @@ def detect_landmarks(source, face_map):
         "eye_ry": eye_ry,
         "pupil_y": pupil_y,
         "mouth_y": mouth_y,
+        "eye_z": eye_z,
+        "eye_z_min": eye_z_min,
+        "eye_z_max": eye_z_max,
+        "mouth_z": mouth_z,
     }
 
 
@@ -401,7 +410,8 @@ def main():
                 f"{skin_id}/{face_id}: {changed} overlay pixels; "
                 f"eye=({landmarks['eye_x']:.4f},{landmarks['eye_y']:.4f}) "
                 f"r=({landmarks['eye_rx']:.4f},{landmarks['eye_ry']:.4f}) "
-                f"mouth_y={landmarks['mouth_y']:.4f}"
+                f"eye_z={landmarks['eye_z']:.4f}[{landmarks['eye_z_min']:.4f},{landmarks['eye_z_max']:.4f}] "
+                f"mouth=({landmarks['mouth_y']:.4f},z={landmarks['mouth_z']:.4f})"
             )
 
     (OUT / "README.txt").write_text(
