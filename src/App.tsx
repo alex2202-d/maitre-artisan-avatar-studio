@@ -7,10 +7,25 @@ import WardrobePanel from './avatar/wardrobe/WardrobePanel'
 import MobileWardrobeControls from './avatar/wardrobe/MobileWardrobeControls'
 import { getOutfitModelUrl } from './avatar/wardrobe/modularCatalog'
 import {
+  bottomOptions,
+  gloveOptions,
+  hairColors,
+  headwearOptions,
+  shoeOptions,
+  skinTones,
+  topOptions,
   wardrobeAssetById,
   wardrobeCategories,
   type WardrobeCategoryId,
 } from './avatar/wardrobe/wardrobeCatalog'
+
+function colorOf<T extends readonly { id: string; color: string }[]>(
+  items: T,
+  id: string | null | undefined,
+  fallback: string,
+) {
+  return items.find((item) => item.id === id)?.color ?? fallback
+}
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState<WardrobeCategoryId>('character')
@@ -29,6 +44,14 @@ export default function App() {
     [config.outfitPresetId, config.skinToneId],
   )
 
+  const skinColor = colorOf(skinTones, config.skinToneId, '#BC7F58')
+  const hairColor = colorOf(hairColors, config.hairColorId, '#201A18')
+  const topColor = colorOf(topOptions, config.outfit.topId, '#1457A6')
+  const bottomColor = colorOf(bottomOptions, config.outfit.bottomId, '#1457A6')
+  const helmetColor = colorOf(headwearOptions, config.outfit.headwearId, '#F4C430')
+  const gloveColor = colorOf(gloveOptions, config.outfit.glovesId, '#F4C430')
+  const shoeColor = colorOf(shoeOptions, config.outfit.shoesId, '#8A431F')
+
   function selectCategory(id: WardrobeCategoryId) {
     setActiveCategory(id)
     const category = wardrobeCategories.find((item) => item.id === id)
@@ -37,12 +60,8 @@ export default function App() {
   }
 
   function moveCategory(direction: -1 | 1) {
-    const currentIndex = Math.max(
-      0,
-      wardrobeCategories.findIndex((item) => item.id === activeCategory),
-    )
-    const nextIndex =
-      (currentIndex + direction + wardrobeCategories.length) % wardrobeCategories.length
+    const currentIndex = Math.max(0, wardrobeCategories.findIndex((item) => item.id === activeCategory))
+    const nextIndex = (currentIndex + direction + wardrobeCategories.length) % wardrobeCategories.length
     selectCategory(wardrobeCategories[nextIndex].id)
   }
 
@@ -70,103 +89,52 @@ export default function App() {
     notify('Avatar enregistré')
   }
 
-  const title =
-    activeCategory === 'skin'
-      ? 'Teinte de peau'
-      : activeCategory === 'outfit'
-        ? 'Tenue métier'
-        : activeCategory === 'face'
-          ? 'Visage'
-          : activeCategory === 'hair'
-            ? 'Coiffure'
-            : activeCategory === 'top'
-              ? 'Hauts'
-              : activeCategory === 'bottom'
-                ? 'Bas'
-                : activeCategory === 'accessory'
-                  ? 'Accessoires'
-                  : selected.kind === 'character'
-                    ? 'Mon avatar'
-                    : selected.label
-
-  const chipText =
-    activeCategory === 'skin'
-      ? '5 variantes GLB'
-      : activeCategory === 'outfit'
-        ? 'Tenue complète riggée'
-        : activeCategory === 'face'
-          ? 'Visage original du GLB'
-          : activeCategory === 'character'
-            ? 'Aperçu sur avatar'
-            : 'Slot 3D inventorié'
+  const title = wardrobeCategories.find((item) => item.id === activeCategory)?.label ?? 'Mon avatar'
 
   return (
     <main className="wardrobe-app">
       <aside className="desktop-sidebar">
         <div className="brand-block">
           <div className="brand-mark">MA</div>
-          <div>
-            <strong>Maître Artisan</strong>
-            <span>Avatar Studio 3D</span>
-          </div>
+          <div><strong>Maître Artisan</strong><span>Avatar Studio 3D</span></div>
         </div>
-
         <p className="collection-label">VESTIAIRE V3</p>
-        <WardrobeCategories
-          categories={wardrobeCategories}
-          activeId={activeCategory}
-          onSelect={selectCategory}
-          className="desktop-categories"
-        />
-
+        <WardrobeCategories categories={wardrobeCategories} activeId={activeCategory} onSelect={selectCategory} className="desktop-categories" />
         <div className="production-badge">
           <span className="status-dot" />
-          <div>
-            <strong>Moteur modulaire actif</strong>
-            <span>GLB riggés · slots réels · aucun filtre visage</span>
-          </div>
+          <div><strong>Vestiaire 3D actif</strong><span>Visages · cheveux · couleurs · accessoires</span></div>
         </div>
       </aside>
 
       <section className="avatar-workspace">
         <header className="mobile-topbar">
-          <div className="mobile-brand">
-            <span>MA</span>
-            <div>
-              <strong>Maître Artisan</strong>
-              <small>Mon avatar</small>
-            </div>
-          </div>
+          <div className="mobile-brand"><span>MA</span><div><strong>Maître Artisan</strong><small>Mon avatar</small></div></div>
           <button type="button" onClick={handleReset}>Réinitialiser</button>
         </header>
 
         <header className="desktop-topbar">
-          <div>
-            <p className="eyebrow">AVATAR STUDIO — V3 MODULAIRE</p>
-            <h1>{title}</h1>
-          </div>
-          <button className="toolbar-button primary" type="button" onClick={handleSave}>
-            Valider mon avatar
-          </button>
+          <div><p className="eyebrow">AVATAR STUDIO — V3 MODULAIRE</p><h1>{title}</h1></div>
+          <button className="toolbar-button primary" type="button" onClick={handleSave}>Valider mon avatar</button>
         </header>
 
         <div className="avatar-stage">
-          <div className="stage-copy">
-            <span>Ton métier.</span>
-            <span>Ton avatar.</span>
-            <strong>Ta progression.</strong>
-          </div>
+          <div className="stage-copy"><span>Ton métier.</span><span>Ton avatar.</span><strong>Ta progression.</strong></div>
 
-          <AvatarScene key={modelUrl} modelUrl={modelUrl} />
+          <AvatarScene
+            modelUrl={modelUrl}
+            skinColor={skinColor}
+            faceId={config.faceId}
+            hairStyleId={config.hairStyleId}
+            hairColor={hairColor}
+            topColor={topColor}
+            bottomColor={bottomColor}
+            helmetColor={helmetColor}
+            gloveColor={gloveColor}
+            shoeColor={shoeColor}
+            accessoryId={config.outfit.accessoryId}
+          />
 
-          <div className="model-chip">
-            <span className="status-dot" />
-            <div>
-              <strong>PERSONNAGE RIGGÉ</strong>
-              <span>{chipText}</span>
-            </div>
-          </div>
-
+          <div className="model-chip"><span className="status-dot" /><div><strong>PERSONNAGE 3D</strong><span>Slots actifs dans le viewer</span></div></div>
           <div className="viewer-hint">Glisse pour faire pivoter</div>
 
           <MobileWardrobeControls
