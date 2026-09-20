@@ -4,7 +4,7 @@ import Avatar2D, { type Avatar2DConfig } from './avatar/Avatar2D'
 type CategoryId = 'avatar' | 'skin' | 'outfit' | 'expression' | 'hair' | 'headwear' | 'top' | 'bottom' | 'gloves' | 'shoes' | 'accessory'
 type Option = { id: string; label: string; note?: string }
 
-const STORAGE_KEY = 'maitre-artisan-avatar-2d-v4'
+const STORAGE_KEY = 'maitre-artisan-avatar-2d-v5'
 
 const categories: Array<{ id: CategoryId; label: string; icon: string }> = [
   { id: 'avatar', label: 'Avatar', icon: '⌂' },
@@ -40,29 +40,33 @@ const hairOptions: Option[] = [
   { id: 'side', label: 'Côté' },
   { id: 'spiky', label: 'Ébouriffé' },
   { id: 'curly', label: 'Bouclé' },
-  { id: 'tuft', label: 'Mèche' },
+  { id: 'classic', label: 'Classique' },
+  { id: 'bob', label: 'Carré' },
 ]
 const headwearOptions: Option[] = [
   { id: 'none', label: 'Aucun' },
   { id: 'hardhat-yellow', label: 'Casque jaune' },
-  { id: 'hardhat-white', label: 'Casque blanc' },
-  { id: 'hardhat-orange', label: 'Casque orange' },
   { id: 'hardhat-blue', label: 'Casque bleu' },
-  { id: 'cap-blue', label: 'Casquette bleue' },
+  { id: 'hardhat-orange', label: 'Casque orange' },
+  { id: 'cap-white', label: 'Casquette blanche' },
+  { id: 'cap-gray', label: 'Casquette grise' },
+  { id: 'beanie', label: 'Bonnet' },
 ]
 const topOptions: Option[] = [
   { id: 'tank-gray', label: 'Débardeur gris' },
   { id: 'tee-navy', label: 'T-shirt marine' },
-  { id: 'overalls-blue', label: 'Salopette bleue' },
+  { id: 'jacket-blue', label: 'Veste bleue' },
   { id: 'jacket-olive', label: 'Veste atelier' },
+  { id: 'painter-top', label: 'Haut peintre' },
   { id: 'hivis-orange', label: 'Haute visibilité' },
 ]
 const bottomOptions: Option[] = [
   { id: 'shorts-gray', label: 'Short gris' },
-  { id: 'shorts-blue', label: 'Short de travail bleu' },
+  { id: 'overalls-blue', label: 'Salopette bleue' },
+  { id: 'pants-blue', label: 'Pantalon bleu' },
   { id: 'cargo-olive', label: 'Cargo atelier' },
-  { id: 'pants-dark', label: 'Pantalon sombre' },
-  { id: 'painter-white', label: 'Pantalon peintre' },
+  { id: 'painter-pants', label: 'Pantalon peintre' },
+  { id: 'cargo-dark', label: 'Cargo sombre' },
 ]
 const gloveOptions: Option[] = [
   { id: 'none', label: 'Sans gants' },
@@ -70,6 +74,7 @@ const gloveOptions: Option[] = [
   { id: 'black', label: 'Noirs' },
   { id: 'orange', label: 'Renforcés' },
   { id: 'white', label: 'Peintre' },
+  { id: 'blue', label: 'Bleus' },
 ]
 const shoeOptions: Option[] = [
   { id: 'bare', label: 'Pieds nus' },
@@ -81,11 +86,12 @@ const shoeOptions: Option[] = [
 ]
 const accessoryOptions: Option[] = [
   { id: 'none', label: 'Aucun' },
-  { id: 'belt', label: 'Ceinture outils' },
-  { id: 'backpack', label: 'Sac à dos' },
-  { id: 'tool-pouch', label: 'Pochette outils' },
-  { id: 'tape-pouch', label: 'Mètre ruban' },
-  { id: 'harness', label: 'Harnais' },
+  { id: 'belt-brown', label: 'Ceinture cuir' },
+  { id: 'belt-electric', label: 'Électricien' },
+  { id: 'belt-mechanic', label: 'Technicien' },
+  { id: 'belt-painter', label: 'Peintre' },
+  { id: 'harness', label: 'Harnais HV' },
+  { id: 'pouch-orange', label: 'Pochette outils' },
 ]
 const hairColorOptions: Option[] = [
   { id: 'brun', label: 'Brun' },
@@ -96,11 +102,11 @@ const hairColorOptions: Option[] = [
 ]
 
 const outfitPresets: Array<Option & { config: Partial<Avatar2DConfig> }> = [
-  { id: 'chantier', label: 'Chantier', note: 'Salopette bleue + casque jaune', config: { top: 'overalls-blue', bottom: 'shorts-blue', gloves: 'yellow', shoes: 'boots-brown', headwear: 'hardhat-yellow', accessory: 'none' } },
-  { id: 'electricien', label: 'Électricien', note: 'Bleu + casque + outillage', config: { top: 'tee-navy', bottom: 'pants-dark', gloves: 'black', shoes: 'boots-black', headwear: 'hardhat-blue', accessory: 'tape-pouch' } },
-  { id: 'technicien', label: 'Technicien CVC', note: 'Atelier olive + ceinture outils', config: { top: 'jacket-olive', bottom: 'cargo-olive', gloves: 'black', shoes: 'boots-brown', headwear: 'none', accessory: 'belt' } },
-  { id: 'peintre', label: 'Peintre', note: 'Blanc + équipement peintre', config: { top: 'tank-gray', bottom: 'painter-white', gloves: 'white', shoes: 'boots-white', headwear: 'hardhat-white', accessory: 'none' } },
-  { id: 'voirie', label: 'Voirie', note: 'Orange haute visibilité', config: { top: 'hivis-orange', bottom: 'pants-dark', gloves: 'orange', shoes: 'boots-orange', headwear: 'hardhat-orange', accessory: 'harness' } },
+  { id: 'chantier', label: 'Chantier', note: 'Salopette bleue + casque jaune', config: { top: 'tee-navy', bottom: 'overalls-blue', gloves: 'yellow', shoes: 'boots-brown', headwear: 'hardhat-yellow', accessory: 'none' } },
+  { id: 'electricien', label: 'Électricien', note: 'Bleu + casque + outillage', config: { top: 'jacket-blue', bottom: 'pants-blue', gloves: 'black', shoes: 'boots-black', headwear: 'hardhat-blue', accessory: 'belt-electric' } },
+  { id: 'technicien', label: 'Technicien CVC', note: 'Atelier olive + ceinture outils', config: { top: 'jacket-olive', bottom: 'cargo-olive', gloves: 'black', shoes: 'boots-brown', headwear: 'none', accessory: 'belt-mechanic' } },
+  { id: 'peintre', label: 'Peintre', note: 'Blanc + équipement peintre', config: { top: 'painter-top', bottom: 'painter-pants', gloves: 'white', shoes: 'boots-white', headwear: 'cap-white', accessory: 'belt-painter' } },
+  { id: 'voirie', label: 'Voirie', note: 'Orange haute visibilité', config: { top: 'hivis-orange', bottom: 'cargo-dark', gloves: 'orange', shoes: 'boots-orange', headwear: 'hardhat-orange', accessory: 'harness' } },
 ]
 
 const defaultConfig: Avatar2DConfig = {
@@ -109,8 +115,8 @@ const defaultConfig: Avatar2DConfig = {
   hair: 'none',
   hairColor: 'brun',
   headwear: 'hardhat-yellow',
-  top: 'overalls-blue',
-  bottom: 'shorts-blue',
+  top: 'tee-navy',
+  bottom: 'overalls-blue',
   gloves: 'yellow',
   shoes: 'boots-brown',
   accessory: 'none',
