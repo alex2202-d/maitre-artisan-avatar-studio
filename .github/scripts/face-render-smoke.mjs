@@ -52,11 +52,11 @@ if (changedPixels(surprised, hair, 24) < 500) throw new Error('Hair did not visi
 
 await page.getByRole('navigation', { name: 'Catégories du vestiaire' }).getByRole('button', { name: /Tenue/ }).click()
 await page.getByRole('button', { name: /Électricien/ }).click()
-await page.waitForTimeout(200)
+await page.waitForTimeout(500)
 const electrician = await capture('wardrobe-2d-electrician')
 if (changedPixels(hair, electrician, 24) < 1500) throw new Error('Outfit preset did not visibly change')
 
-const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('maitre-artisan-avatar-2d') || '{}'))
+const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('maitre-artisan-avatar-2d-v4') || '{}'))
 if (saved.expression !== 'surprised') throw new Error('Expression is not persisted')
 if (saved.hair !== 'spiky') throw new Error('Hair is not persisted')
 if (saved.top !== 'tee-navy') throw new Error('Outfit is not persisted')
