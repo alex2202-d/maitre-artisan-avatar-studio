@@ -143,8 +143,8 @@ function configKey(category: CategoryId): keyof Avatar2DConfig | null {
   return map[category] ?? null
 }
 
-function MiniAvatar({ config }: { config: Avatar2DConfig }) {
-  return <Avatar2D config={config} className="mini-avatar" />
+function MiniAvatar({ config, preset }: { config: Avatar2DConfig; preset?: string }) {
+  return <Avatar2D config={config} preset={preset} className="mini-avatar" />
 }
 
 export default function App() {
@@ -241,7 +241,7 @@ export default function App() {
         <div className="stage-card">
           <div className="stage-message left">Un artisan<br/>d’aujourd’hui<br/><b>bâtit un monde<br/>meilleur !</b></div>
           <div className="stage-message right">Crée.<br/>Équipe.<br/>Avance.</div>
-          <Avatar2D config={config} className="main-avatar" />
+          <Avatar2D config={config} preset={activePreset} className="main-avatar" />
           <div className="stage-actions">
             <button onClick={randomize}>◈ Avatar aléatoire</button>
             <span>Vestiaire 2D interactif</span>
@@ -273,7 +273,7 @@ export default function App() {
                 const preview = { ...config, ...preset.config }
                 return (
                   <button key={preset.id} className={'preset-card ' + (activePreset === preset.id ? 'active' : '')} onClick={() => applyPreset(preset.id)}>
-                    <div className="preset-preview"><MiniAvatar config={preview} /></div>
+                    <div className="preset-preview"><MiniAvatar config={preview} preset={preset.id} /></div>
                     <div><strong>{preset.label}</strong><small>{preset.note}</small></div>
                   </button>
                 )
