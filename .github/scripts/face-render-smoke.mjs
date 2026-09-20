@@ -18,6 +18,7 @@ page.on('console', (message) => {
 await page.goto(url, { waitUntil: 'networkidle' })
 await page.waitForSelector('.main-avatar')
 await page.waitForTimeout(500)
+await page.screenshot({ path: path.join(outputDir, 'wardrobe-2d-full-ui.png'), fullPage: true })
 
 async function capture(name) {
   const buffer = await page.locator('.stage-card').screenshot({ type: 'png' })
