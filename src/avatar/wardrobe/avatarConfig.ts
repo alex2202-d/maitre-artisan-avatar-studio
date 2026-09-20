@@ -59,7 +59,7 @@ function normalizeV3(parsed: Partial<AvatarConfigV3>): AvatarConfigV3 {
 
 function migrateV2(raw: string): AvatarConfigV3 | null {
   try {
-    const parsed = JSON.parse(raw) as Partial<AvatarConfigV3> & { version?: number }
+    const parsed = JSON.parse(raw) as { version?: number; bodyType?: AvatarGender; skinToneId?: string; faceId?: string; hairStyleId?: string; hairColorId?: string }
     if (parsed.version !== 2) return null
     return normalizeV3(parsed)
   } catch {
