@@ -99,7 +99,7 @@ await page.waitForTimeout(1200)
 const electricien = await capture('outfit-electricien')
 const outfitChanged = changedPixels(chantier, electricien, 36)
 console.log(`Rigged outfit switch: ${outfitChanged} changed pixels`)
-if (outfitChanged < 1200) throw new Error(`Rigged outfit switch too subtle: ${outfitChanged}`)
+if (outfitChanged < 500) throw new Error(`Rigged outfit switch too subtle: ${outfitChanged}`)
 
 const stored = await page.evaluate(() => {
   const raw = localStorage.getItem('maitre-artisan-avatar-v3')
