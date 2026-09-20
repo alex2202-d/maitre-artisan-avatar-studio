@@ -1,7 +1,13 @@
 import { Suspense, useEffect, useMemo } from 'react'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Color, type Material, type Mesh, type MeshStandardMaterial } from 'three'
+import {
+  Color,
+  MeshStandardMaterial,
+  type Material,
+  type Mesh,
+  type SkinnedMesh,
+} from 'three'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 const AVATAR_ROOT_SCALE = 1
@@ -19,10 +25,7 @@ function createWardrobeMaterial(
   material: Material,
   topColor: string,
   bottomColor: string,
-  skinColor: string,
-  faceId: string,
   debugBind: boolean,
-  debugFace: boolean,
 ) {
   const standard = material as MeshStandardMaterial
   if (!standard.isMeshStandardMaterial) return material
@@ -30,14 +33,10 @@ function createWardrobeMaterial(
   const patched = standard.clone()
   const top = new Color(topColor)
   const bottom = new Color(bottomColor)
-  const skin = new Color(skinColor)
-  const faceIndex = FACE_INDEX[faceId] ?? 0
-  const faceLiteral = faceIndex.toFixed(1)
 
   patched.onBeforeCompile = (shader) => {
     shader.uniforms.avatarTopColor = { value: top }
     shader.uniforms.avatarBottomColor = { value: bottom }
-    shader.uniforms.avatarSkinColor = { value: skin }
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -55,27 +54,11 @@ function createWardrobeMaterial(
         `#include <common>
 uniform vec3 avatarTopColor;
 uniform vec3 avatarBottomColor;
-uniform vec3 avatarSkinColor;
-const float avatarExpression = ${faceLiteral};
-varying vec3 vAvatarBindPosition;
-
-float maEllipseMask(vec2 p, vec2 center, vec2 radius) {
-  vec2 d = (p - center) / radius;
-  return 1.0 - smoothstep(0.82, 1.0, dot(d, d));
-}
-
-float maSegmentMask(vec2 p, vec2 a, vec2 b, float width) {
-  vec2 pa = p - a;
-  vec2 ba = b - a;
-  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.000001), 0.0, 1.0);
-  float d = length(pa - ba * h);
-  return 1.0 - smoothstep(width * 0.72, width, d);
-}`,
+varying vec3 vAvatarBindPosition;`,
       )
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
-
         float r = diffuseColor.r;
         float g = diffuseColor.g;
         float b = diffuseColor.b;
@@ -97,148 +80,6 @@ float maSegmentMask(vec2 p, vec2 a, vec2 b, float width) {
           vec3 targetColor = topRegion ? avatarTopColor : avatarBottomColor;
           float preservedShade = clamp(sourceLuma / 0.16, 0.48, 1.45);
           diffuseColor.rgb = clamp(targetColor * preservedShade, 0.0, 1.0);
-        }
-
-        // Meshy generated the V2 avatar as one continuous skinned mesh with the
-        // classic face baked into its texture. The face slot therefore works
-        // directly on the measured bind-pose head surface. These coordinates
-        // were decoded from the actual rendered pixels, not guessed:
-        // left eye  = (-0.0645, 0.7814, 0.2181)
-        // right eye = ( 0.0567, 0.7812, 0.2211)
-        // mouth     = ( 0.0010, 0.6631, 0.1567)
-        if (avatarExpression > 0.5) {
-          vec3 fp = vAvatarBindPosition;
-          float front = smoothstep(0.125, 0.155, fp.z);
-
-          vec2 leftEyeCenter = vec2(-0.061, 0.781);
-          vec2 rightEyeCenter = vec2(0.061, 0.781);
-
-          float cleanLeft = maEllipseMask(fp.xy, leftEyeCenter, vec2(0.078, 0.071));
-          float cleanRight = maEllipseMask(fp.xy, rightEyeCenter, vec2(0.078, 0.071));
-          float cleanEyes = max(cleanLeft, cleanRight) * front;
-
-          float mouthXMask = 1.0 - smoothstep(0.102, 0.118, abs(fp.x));
-          float mouthYMask =
-            smoothstep(0.610, 0.625, fp.y) *
-            (1.0 - smoothstep(0.700, 0.715, fp.y));
-          float cleanMouth = mouthXMask * mouthYMask * front;
-
-          float cleanFace = max(cleanEyes, cleanMouth);
-          if (cleanFace > 0.001) {
-            float skinShade = clamp(0.992 + (fp.y - 0.72) * 0.045, 0.965, 1.02);
-            vec3 cleanSkin = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
-            diffuseColor.rgb = mix(diffuseColor.rgb, cleanSkin, cleanFace);
-          }
-
-          bool smiling =
-            avatarExpression > 0.5 && avatarExpression < 1.5;
-          bool determined =
-            avatarExpression > 1.5 && avatarExpression < 2.5;
-          bool surprised =
-            avatarExpression > 2.5;
-
-          float eyeRy = smiling ? 0.052 : (determined ? 0.038 : 0.066);
-          float eyeRx = surprised ? 0.058 : 0.054;
-
-          float leftEye = maEllipseMask(
-            fp.xy,
-            leftEyeCenter,
-            vec2(eyeRx, eyeRy)
-          );
-          float rightEye = maEllipseMask(
-            fp.xy,
-            rightEyeCenter,
-            vec2(eyeRx, eyeRy)
-          );
-          float eyeMask = max(leftEye, rightEye) * front;
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.985), eyeMask);
-
-          float pupilY =
-            smiling ? 0.784 : (determined ? 0.777 : 0.781);
-          float pupilRx = surprised ? 0.0135 : 0.0120;
-          float pupilRy = surprised ? 0.0170 : (determined ? 0.0100 : 0.0130);
-          float leftPupil = maEllipseMask(
-            fp.xy,
-            vec2(-0.061, pupilY),
-            vec2(pupilRx, pupilRy)
-          );
-          float rightPupil = maEllipseMask(
-            fp.xy,
-            vec2(0.061, pupilY),
-            vec2(pupilRx, pupilRy)
-          );
-          float pupilMask = max(leftPupil, rightPupil) * front;
-          diffuseColor.rgb = mix(
-            diffuseColor.rgb,
-            vec3(0.035, 0.026, 0.021),
-            pupilMask
-          );
-
-          if (determined) {
-            float browL = maSegmentMask(
-              fp.xy,
-              vec2(-0.116, 0.840),
-              vec2(-0.016, 0.811),
-              0.0090
-            );
-            float browR = maSegmentMask(
-              fp.xy,
-              vec2(0.016, 0.811),
-              vec2(0.116, 0.840),
-              0.0090
-            );
-            float brows = max(browL, browR) * front;
-            diffuseColor.rgb = mix(
-              diffuseColor.rgb,
-              vec3(0.050, 0.036, 0.030),
-              brows
-            );
-
-            float mouth = maSegmentMask(
-              fp.xy,
-              vec2(-0.050, 0.650),
-              vec2(0.050, 0.650),
-              0.0075
-            ) * front;
-            diffuseColor.rgb = mix(
-              diffuseColor.rgb,
-              vec3(0.050, 0.036, 0.030),
-              mouth
-            );
-          } else if (surprised) {
-            float mouthOuter = maEllipseMask(
-              fp.xy,
-              vec2(0.0, 0.651),
-              vec2(0.029, 0.037)
-            );
-            float mouthInner = maEllipseMask(
-              fp.xy,
-              vec2(0.0, 0.651),
-              vec2(0.014, 0.020)
-            );
-            float mouthRing = clamp(mouthOuter - mouthInner, 0.0, 1.0) * front;
-            diffuseColor.rgb = mix(
-              diffuseColor.rgb,
-              vec3(0.045, 0.031, 0.027),
-              mouthRing
-            );
-          } else if (smiling) {
-            float mx = fp.x;
-            float width = 0.073;
-            float normalized = clamp(abs(mx) / width, 0.0, 1.0);
-            // Corners higher, centre lower: a simple graphic smile that stays
-            // within the approved compact cartoon direction.
-            float curveY = 0.642 + 0.034 * normalized * normalized;
-            float mouth =
-              (1.0 - smoothstep(0.0055, 0.0090, abs(fp.y - curveY))) *
-              (1.0 - smoothstep(width - 0.012, width, abs(mx))) *
-              front;
-            diffuseColor.rgb = mix(
-              diffuseColor.rgb,
-              vec3(0.050, 0.036, 0.030),
-              mouth
-            );
-          }
         }`,
       )
 
@@ -260,26 +101,237 @@ float maSegmentMask(vec2 p, vec2 a, vec2 b, float width) {
         );`,
       )
     }
-
-    if (debugFace) {
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <dithering_fragment>',
-        `#include <dithering_fragment>
-        gl_FragColor = vec4(
-          avatarExpression < 0.5 ? vec3(1.0, 0.0, 0.0) :
-          avatarExpression < 1.5 ? vec3(0.0, 1.0, 0.0) :
-          avatarExpression < 2.5 ? vec3(0.0, 0.0, 1.0) :
-                                   vec3(1.0, 0.0, 1.0),
-          1.0
-        );`,
-      )
-    }
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-face-slot-v1-${topColor}-${bottomColor}-${skinColor}-${faceId}-${debugBind}-${debugFace}`
+    `ma-wardrobe-v5-${topColor}-${bottomColor}-${debugBind}`
   patched.needsUpdate = true
   return patched
+}
+
+function createFaceOverlayMaterial(skinColor: string, faceId: string) {
+  const skin = new Color(skinColor)
+  const faceIndex = FACE_INDEX[faceId] ?? 0
+  const faceLiteral = faceIndex.toFixed(1)
+
+  const material = new MeshStandardMaterial({
+    color: '#ffffff',
+    roughness: 0.88,
+    metalness: 0,
+    transparent: true,
+    opacity: 1,
+    alphaTest: 0.015,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+  })
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.avatarSkinColor = { value: skin }
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vFaceBindPosition;',
+      )
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvFaceBindPosition = position;',
+      )
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+uniform vec3 avatarSkinColor;
+const float avatarFaceExpression = ${faceLiteral};
+varying vec3 vFaceBindPosition;
+
+float maEllipse(vec2 p, vec2 center, vec2 radius) {
+  vec2 d = (p - center) / radius;
+  return 1.0 - smoothstep(0.82, 1.0, dot(d, d));
+}
+
+float maSegment(vec2 p, vec2 a, vec2 b, float width) {
+  vec2 pa = p - a;
+  vec2 ba = b - a;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.000001), 0.0, 1.0);
+  float d = length(pa - ba * h);
+  return 1.0 - smoothstep(width * 0.72, width, d);
+}`,
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        vec3 fp = vFaceBindPosition;
+
+        // Measured directly from the rendered V2 avatar:
+        // left eye  = (-0.0645, 0.7814, 0.2181)
+        // right eye = ( 0.0567, 0.7812, 0.2211)
+        // mouth     = ( 0.0010, 0.6631, 0.1567)
+        float front = smoothstep(0.125, 0.155, fp.z);
+
+        vec2 leftEyeCenter = vec2(-0.061, 0.781);
+        vec2 rightEyeCenter = vec2(0.061, 0.781);
+
+        float cleanLeft =
+          maEllipse(fp.xy, leftEyeCenter, vec2(0.080, 0.073));
+        float cleanRight =
+          maEllipse(fp.xy, rightEyeCenter, vec2(0.080, 0.073));
+        float cleanEyes = max(cleanLeft, cleanRight) * front;
+
+        float cleanMouthX =
+          1.0 - smoothstep(0.098, 0.118, abs(fp.x));
+        float cleanMouthY =
+          smoothstep(0.610, 0.625, fp.y) *
+          (1.0 - smoothstep(0.704, 0.718, fp.y));
+        float cleanMouth = cleanMouthX * cleanMouthY * front;
+
+        float overlayAlpha = max(cleanEyes, cleanMouth);
+        float skinShade = clamp(0.992 + (fp.y - 0.72) * 0.045, 0.965, 1.02);
+        vec3 overlayColor = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
+
+        bool smiling =
+          avatarFaceExpression > 0.5 && avatarFaceExpression < 1.5;
+        bool determined =
+          avatarFaceExpression > 1.5 && avatarFaceExpression < 2.5;
+        bool surprised =
+          avatarFaceExpression > 2.5;
+
+        float eyeRx = surprised ? 0.060 : 0.055;
+        float eyeRy =
+          smiling ? 0.050 : (determined ? 0.038 : 0.069);
+
+        float leftEye =
+          maEllipse(fp.xy, leftEyeCenter, vec2(eyeRx, eyeRy)) * front;
+        float rightEye =
+          maEllipse(fp.xy, rightEyeCenter, vec2(eyeRx, eyeRy)) * front;
+        float eyeWhite = max(leftEye, rightEye);
+        overlayColor = mix(overlayColor, vec3(0.985), eyeWhite);
+        overlayAlpha = max(overlayAlpha, eyeWhite);
+
+        float pupilY =
+          smiling ? 0.786 : (determined ? 0.777 : 0.781);
+        float pupilRx = surprised ? 0.0145 : 0.0125;
+        float pupilRy =
+          surprised ? 0.0180 : (determined ? 0.0100 : 0.0135);
+
+        float leftPupil =
+          maEllipse(
+            fp.xy,
+            vec2(-0.061, pupilY),
+            vec2(pupilRx, pupilRy)
+          ) * front;
+        float rightPupil =
+          maEllipse(
+            fp.xy,
+            vec2(0.061, pupilY),
+            vec2(pupilRx, pupilRy)
+          ) * front;
+        float pupil = max(leftPupil, rightPupil);
+        overlayColor = mix(
+          overlayColor,
+          vec3(0.035, 0.026, 0.021),
+          pupil
+        );
+        overlayAlpha = max(overlayAlpha, pupil);
+
+        if (determined) {
+          float browL =
+            maSegment(
+              fp.xy,
+              vec2(-0.120, 0.837),
+              vec2(-0.018, 0.809),
+              0.0095
+            ) * front;
+          float browR =
+            maSegment(
+              fp.xy,
+              vec2(0.018, 0.809),
+              vec2(0.120, 0.837),
+              0.0095
+            ) * front;
+          float brows = max(browL, browR);
+          overlayColor = mix(
+            overlayColor,
+            vec3(0.048, 0.034, 0.028),
+            brows
+          );
+          overlayAlpha = max(overlayAlpha, brows);
+
+          float mouth =
+            maSegment(
+              fp.xy,
+              vec2(-0.054, 0.658),
+              vec2(0.054, 0.658),
+              0.0080
+            ) * front;
+          overlayColor = mix(
+            overlayColor,
+            vec3(0.048, 0.034, 0.028),
+            mouth
+          );
+          overlayAlpha = max(overlayAlpha, mouth);
+        } else if (surprised) {
+          float mouthOuter =
+            maEllipse(
+              fp.xy,
+              vec2(0.0, 0.660),
+              vec2(0.032, 0.041)
+            ) * front;
+          float mouthInner =
+            maEllipse(
+              fp.xy,
+              vec2(0.0, 0.660),
+              vec2(0.015, 0.022)
+            ) * front;
+          float mouthRing = clamp(mouthOuter - mouthInner, 0.0, 1.0);
+          overlayColor = mix(
+            overlayColor,
+            vec3(0.044, 0.030, 0.026),
+            mouthRing
+          );
+          overlayAlpha = max(overlayAlpha, mouthRing);
+        } else if (smiling) {
+          // Deliberately broader and lower than the baked classic smile so the
+          // wardrobe choice reads immediately at normal camera distance.
+          float mx = fp.x;
+          float width = 0.082;
+          float normalized = clamp(abs(mx) / width, 0.0, 1.0);
+          float smileY = 0.638 + 0.050 * normalized * normalized;
+          float mouth =
+            (1.0 - smoothstep(0.0060, 0.0100, abs(fp.y - smileY))) *
+            (1.0 - smoothstep(width - 0.014, width, abs(mx))) *
+            front;
+
+          overlayColor = mix(
+            overlayColor,
+            vec3(0.048, 0.034, 0.028),
+            mouth
+          );
+          overlayAlpha = max(overlayAlpha, mouth);
+
+          // Small white lower highlight makes the smile visibly distinct while
+          // preserving the simple South-Park-like graphic language.
+          float toothY = 0.648 + 0.025 * normalized * normalized;
+          float tooth =
+            (1.0 - smoothstep(0.0035, 0.0065, abs(fp.y - toothY))) *
+            (1.0 - smoothstep(0.050, 0.062, abs(mx))) *
+            front;
+          overlayColor = mix(overlayColor, vec3(0.97), tooth);
+          overlayAlpha = max(overlayAlpha, tooth);
+        }
+
+        diffuseColor.rgb = overlayColor;
+        diffuseColor.a = overlayAlpha;`,
+      )
+  }
+
+  material.customProgramCacheKey = () =>
+    `ma-face-overlay-v1-${skinColor}-${faceId}`
+  material.needsUpdate = true
+  return material
 }
 
 function ProductionModel({
@@ -289,7 +341,6 @@ function ProductionModel({
   skinColor,
   faceId,
   debugBind,
-  debugFace,
 }: {
   url: string
   topColor: string
@@ -297,12 +348,15 @@ function ProductionModel({
   skinColor: string
   faceId: string
   debugBind: boolean
-  debugFace: boolean
 }) {
   const { scene } = useGLTF(url)
 
   const model = useMemo(() => {
     const instance = clone(scene)
+    const faceOverlays: Array<{
+      parent: NonNullable<SkinnedMesh['parent']>
+      overlay: SkinnedMesh
+    }> = []
 
     instance.traverse((child) => {
       const mesh = child as Mesh
@@ -317,10 +371,7 @@ function ProductionModel({
             material,
             topColor,
             bottomColor,
-            skinColor,
-            faceId,
             debugBind,
-            debugFace,
           ),
         )
       } else if (mesh.material) {
@@ -328,16 +379,37 @@ function ProductionModel({
           mesh.material,
           topColor,
           bottomColor,
-          skinColor,
-          faceId,
           debugBind,
-          debugFace,
         )
+      }
+
+      const skinned = child as SkinnedMesh
+      if (
+        faceId !== 'face-classic' &&
+        skinned.isSkinnedMesh &&
+        skinned.parent
+      ) {
+        const overlay = skinned.clone(false) as SkinnedMesh
+        overlay.name = `${skinned.name || 'avatar'}__face_overlay`
+        overlay.material = createFaceOverlayMaterial(skinColor, faceId)
+        overlay.castShadow = false
+        overlay.receiveShadow = false
+        overlay.renderOrder = 30
+        overlay.frustumCulled = false
+
+        faceOverlays.push({
+          parent: skinned.parent,
+          overlay,
+        })
       }
     })
 
+    faceOverlays.forEach(({ parent, overlay }) => {
+      parent.add(overlay)
+    })
+
     return instance
-  }, [scene, topColor, bottomColor, skinColor, faceId, debugBind, debugFace])
+  }, [scene, topColor, bottomColor, skinColor, faceId, debugBind])
 
   useEffect(() => {
     return () => {
@@ -391,10 +463,9 @@ export default function AvatarScene({
   skinColor?: string
   faceId?: string
 }) {
-  const debugParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const debugBind = debugParams?.get('debugBind') === '1'
-  const debugFace = debugParams?.get('debugFace') === '1'
+  const debugBind =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debugBind') === '1'
 
   return (
     <Canvas
@@ -426,7 +497,6 @@ export default function AvatarScene({
           skinColor={skinColor}
           faceId={faceId}
           debugBind={debugBind}
-          debugFace={debugFace}
         />
       </Suspense>
 
