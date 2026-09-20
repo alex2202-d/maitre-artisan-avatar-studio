@@ -46,9 +46,9 @@ export const skinTones = [
 
 export const faceOptions = [
   { id: 'face-classic', label: 'Classique', description: 'Expression neutre et sympathique.' },
-  { id: 'face-smile', label: 'Souriant', description: 'Grand sourire, regard ouvert.' },
-  { id: 'face-determined', label: 'Déterminé', description: 'Regard concentré et bouche ferme.' },
-  { id: 'face-surprised', label: 'Surpris', description: 'Yeux ouverts et bouche ronde.' },
+  { id: 'face-smile', label: 'Souriant', description: 'Sourire simple, yeux d’origine.' },
+  { id: 'face-determined', label: 'Déterminé', description: 'Sourcils discrets et bouche ferme.' },
+  { id: 'face-surprised', label: 'Surpris', description: 'Petite bouche ronde, yeux d’origine.' },
 ] as const
 
 export const hairColors = [
