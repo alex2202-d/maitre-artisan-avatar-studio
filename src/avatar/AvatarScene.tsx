@@ -15,8 +15,9 @@ const AVATAR_ROOT_SCALE = 1
 const AVATAR_HEIGHT_METERS = 1.1
 const CAMERA_DISTANCE = 3
 
-function prepareFaceOverlay(texture: Texture) {
-  texture.flipY = false
+function prepareFaceAsset(texture: Texture) {
+  // Standard image/SVG texture convention: keep TextureLoader's Y orientation.
+  // The face is projected in bind-pose coordinates, not through the GLB UV atlas.
   texture.colorSpace = SRGBColorSpace
   texture.needsUpdate = true
   return texture
@@ -26,8 +27,10 @@ function createWardrobeMaterial(
   material: Material,
   topColor: string,
   bottomColor: string,
-  faceOverlay: Texture,
-  faceOverlayKey: string,
+  skinColor: string,
+  faceAsset: Texture,
+  faceAssetKey: string,
+  replaceFace: boolean,
 ) {
   const standard = material as MeshStandardMaterial
   if (!standard.isMeshStandardMaterial) return material
@@ -35,11 +38,14 @@ function createWardrobeMaterial(
   const patched = standard.clone()
   const top = new Color(topColor)
   const bottom = new Color(bottomColor)
+  const skin = new Color(skinColor)
 
   patched.onBeforeCompile = (shader) => {
     shader.uniforms.avatarTopColor = { value: top }
     shader.uniforms.avatarBottomColor = { value: bottom }
-    shader.uniforms.avatarFaceOverlay = { value: faceOverlay }
+    shader.uniforms.avatarSkinColor = { value: skin }
+    shader.uniforms.avatarFaceAsset = { value: faceAsset }
+    shader.uniforms.avatarReplaceFace = { value: replaceFace ? 1 : 0 }
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -57,18 +63,63 @@ function createWardrobeMaterial(
         `#include <common>
 uniform vec3 avatarTopColor;
 uniform vec3 avatarBottomColor;
-uniform sampler2D avatarFaceOverlay;
-varying vec3 vAvatarBindPosition;`,
+uniform vec3 avatarSkinColor;
+uniform sampler2D avatarFaceAsset;
+uniform float avatarReplaceFace;
+varying vec3 vAvatarBindPosition;
+
+float maFaceEllipse(vec2 p, vec2 center, vec2 radius) {
+  vec2 d = (p - center) / radius;
+  return dot(d, d);
+}`,
       )
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
 
-        // Real modular face asset: a transparent UV overlay baked from the
-        // original avatar geometry/texture. The overlay removes the baked
-        // expression only where needed, then supplies the selected face.
-        vec4 avatarFace = texture2D(avatarFaceOverlay, vMapUv);
-        diffuseColor.rgb = mix(diffuseColor.rgb, avatarFace.rgb, avatarFace.a);
+        // The Meshy V2 avatar is one continuous mesh and its UV atlas contains
+        // overlapping islands. Therefore facial assets are projected in the
+        // measured bind-pose head coordinates instead of using TEXCOORD_0.
+        if (avatarReplaceFace > 0.5) {
+          vec3 fp = vAvatarBindPosition;
+
+          // Measurements from the real V2 GLB/source texture:
+          // eyes ~ (+/-0.0611, 0.9257, z 0.1624..0.1879)
+          // mouth ~ (0, 0.7499, z ~0.1964)
+          float front = smoothstep(0.145, 0.166, fp.z);
+
+          bool leftEyeZone =
+            maFaceEllipse(fp.xy, vec2(-0.0611, 0.9257), vec2(0.067, 0.071)) <= 1.0;
+          bool rightEyeZone =
+            maFaceEllipse(fp.xy, vec2(0.0611, 0.9257), vec2(0.067, 0.071)) <= 1.0;
+          bool mouthZone =
+            abs(fp.x) <= 0.112 &&
+            fp.y >= 0.690 &&
+            fp.y <= 0.808;
+
+          // Remove the baked classic eyes/pupils/mouth from the original
+          // continuous mesh. Lighting is still applied afterwards by the
+          // MeshStandardMaterial, so the cleaned area remains integrated.
+          if (front > 0.02 && (leftEyeZone || rightEyeZone || mouthZone)) {
+            float skinShade = clamp(0.99 + (fp.y - 0.82) * 0.055, 0.965, 1.02);
+            diffuseColor.rgb = avatarSkinColor * skinShade;
+          }
+
+          // Independent face asset projected only on the measured front of head.
+          vec2 faceUv = vec2(
+            (fp.x + 0.150) / 0.300,
+            (fp.y - 0.680) / 0.320
+          );
+
+          bool faceUvInside =
+            faceUv.x >= 0.0 && faceUv.x <= 1.0 &&
+            faceUv.y >= 0.0 && faceUv.y <= 1.0;
+
+          if (front > 0.02 && faceUvInside) {
+            vec4 faceLayer = texture2D(avatarFaceAsset, faceUv);
+            diffuseColor.rgb = mix(diffuseColor.rgb, faceLayer.rgb, faceLayer.a * front);
+          }
+        }
 
         float r = diffuseColor.r;
         float g = diffuseColor.g;
@@ -96,7 +147,7 @@ varying vec3 vAvatarBindPosition;`,
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-face-overlay-v1-${topColor}-${bottomColor}-${faceOverlayKey}`
+    `ma-wardrobe-projected-face-v1-${topColor}-${bottomColor}-${skinColor}-${faceAssetKey}-${replaceFace}`
   patched.needsUpdate = true
   return patched
 }
@@ -105,18 +156,22 @@ function ProductionModel({
   url,
   topColor,
   bottomColor,
-  faceOverlayUrl,
+  skinColor,
+  faceAssetUrl,
+  replaceFace,
 }: {
   url: string
   topColor: string
   bottomColor: string
-  faceOverlayUrl: string
+  skinColor: string
+  faceAssetUrl: string
+  replaceFace: boolean
 }) {
   const { scene } = useGLTF(url)
-  const loadedFaceOverlay = useTexture(faceOverlayUrl)
-  const faceOverlay = useMemo(
-    () => prepareFaceOverlay(loadedFaceOverlay),
-    [loadedFaceOverlay],
+  const loadedFaceAsset = useTexture(faceAssetUrl)
+  const faceAsset = useMemo(
+    () => prepareFaceAsset(loadedFaceAsset),
+    [loadedFaceAsset],
   )
 
   const model = useMemo(() => {
@@ -135,8 +190,10 @@ function ProductionModel({
             material,
             topColor,
             bottomColor,
-            faceOverlay,
-            faceOverlayUrl,
+            skinColor,
+            faceAsset,
+            faceAssetUrl,
+            replaceFace,
           ),
         )
       } else if (mesh.material) {
@@ -144,14 +201,24 @@ function ProductionModel({
           mesh.material,
           topColor,
           bottomColor,
-          faceOverlay,
-          faceOverlayUrl,
+          skinColor,
+          faceAsset,
+          faceAssetUrl,
+          replaceFace,
         )
       }
     })
 
     return instance
-  }, [scene, topColor, bottomColor, faceOverlay, faceOverlayUrl])
+  }, [
+    scene,
+    topColor,
+    bottomColor,
+    skinColor,
+    faceAsset,
+    faceAssetUrl,
+    replaceFace,
+  ])
 
   useEffect(() => {
     return () => {
@@ -192,12 +259,14 @@ function LockCamera() {
 
 export default function AvatarScene({
   modelUrl,
-  faceOverlayUrl,
+  faceAssetUrl,
   topColor = '#D93636',
   bottomColor = '#D93636',
+  skinColor = '#BC7F58',
+  faceId = 'face-classic',
 }: {
   modelUrl: string
-  faceOverlayUrl: string
+  faceAssetUrl: string
   kind?: 'character' | 'piece'
   skinToneId?: string
   topColor?: string
@@ -205,6 +274,8 @@ export default function AvatarScene({
   skinColor?: string
   faceId?: string
 }) {
+  const replaceFace = faceId !== 'face-classic'
+
   return (
     <Canvas
       shadows
@@ -232,7 +303,9 @@ export default function AvatarScene({
           url={modelUrl}
           topColor={topColor}
           bottomColor={bottomColor}
-          faceOverlayUrl={faceOverlayUrl}
+          skinColor={skinColor}
+          faceAssetUrl={faceAssetUrl}
+          replaceFace={replaceFace}
         />
       </Suspense>
 
