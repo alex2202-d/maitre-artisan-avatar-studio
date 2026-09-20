@@ -3,7 +3,7 @@ import path from 'node:path'
 import { chromium } from 'playwright'
 import { PNG } from 'pngjs'
 
-// Validates the actual rendered head area against the generated UV face assets.
+// Validates the actual rendered head area of the rigged 3D face overlay.
 const url = process.env.AVATAR_URL ?? 'http://127.0.0.1:5173'
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
@@ -55,30 +55,6 @@ function decodeBindAt(xf, yf, label) {
 decodeBindAt(0.458, 0.363, 'left-eye')
 decodeBindAt(0.536, 0.363, 'right-eye')
 decodeBindAt(0.500, 0.434, 'mouth')
-
-await page.goto(`${url}?debugFace=1`, { waitUntil: 'networkidle' })
-await page.waitForSelector('canvas')
-await page.waitForTimeout(900)
-const debugFaceCategory = page
-  .getByRole('navigation', { name: 'Catégories du vestiaire' })
-  .getByRole('button', { name: 'Visage' })
-  .first()
-await debugFaceCategory.click()
-await page.getByRole('button', { name: 'Classique' }).waitFor()
-
-const debugFaces = ['Classique', 'Souriant', 'Déterminé', 'Surpris']
-for (const face of debugFaces) {
-  await page.getByRole('button', { name: face }).click()
-  await page.waitForTimeout(650)
-  const buffer = await page.locator('canvas').screenshot({ type: 'png' })
-  const png = PNG.sync.read(buffer)
-  const x = Math.round(png.width * 0.50)
-  const y = Math.round(png.height * 0.60)
-  const i = (png.width * y + x) * 4
-  console.log(
-    `FACE_SHADER ${face}: rgb=(${png.data[i]},${png.data[i + 1]},${png.data[i + 2]})`,
-  )
-}
 
 await page.goto(url, { waitUntil: 'networkidle' })
 await page.waitForSelector('canvas')
