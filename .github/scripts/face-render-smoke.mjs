@@ -59,7 +59,7 @@ if (changedPixels(hair, electrician, 24) < 1500) throw new Error('Outfit preset 
 const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('maitre-artisan-avatar-2d') || '{}'))
 if (saved.expression !== 'surprised') throw new Error('Expression is not persisted')
 if (saved.hair !== 'spiky') throw new Error('Hair is not persisted')
-if (saved.top !== 'jacket-blue') throw new Error('Outfit is not persisted')
+if (saved.top !== 'tee-navy') throw new Error('Outfit is not persisted')
 
 await browser.close()
 if (errors.length) {
