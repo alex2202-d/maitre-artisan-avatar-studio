@@ -1,0 +1,50 @@
+name: Avatar Face Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/avatar/AvatarScene.tsx'
+      - '.github/scripts/face-render-smoke.mjs'
+      - '.github/workflows/avatar-face-smoke.yml'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install app
+        run: npm ci
+
+      - name: Install browser smoke dependency
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start avatar studio
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/avatar-vite.log 2>&1 &
+          echo $! > /tmp/avatar-vite.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/avatar-vite.log
+          exit 1
+
+      - name: Verify four face renders
+        run: node .github/scripts/face-render-smoke.mjs
+
+      - name: Show Vite log on failure
+        if: failure()
+        run: cat /tmp/avatar-vite.log || true
