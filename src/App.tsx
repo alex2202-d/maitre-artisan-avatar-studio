@@ -39,10 +39,7 @@ export default function App() {
     [selectedId],
   )
 
-  const modelUrl = useMemo(
-    () => getOutfitModelUrl(config.outfitPresetId, config.skinToneId),
-    [config.outfitPresetId, config.skinToneId],
-  )
+  const modelUrl = '/assets/avatar/v3/base/avatar-neutral-rigged.glb'
 
   const skinColor = colorOf(skinTones, config.skinToneId, '#BC7F58')
   const hairColor = colorOf(hairColors, config.hairColorId, '#201A18')

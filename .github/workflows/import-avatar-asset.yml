@@ -1,0 +1,46 @@
+name: Import generated avatar asset
+
+on:
+  push:
+    branches:
+      - fix/wardrobe-real-base
+    paths:
+      - '.github/asset-import.json'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/wardrobe-real-base
+
+      - name: Download generated GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=$(jq -r '.url' .github/asset-import.json)
+          DEST=$(jq -r '.destination' .github/asset-import.json)
+          mkdir -p "$(dirname "$DEST")"
+          curl -fL --retry 3 --retry-delay 2 "$URL" -o "$DEST"
+          test -s "$DEST"
+          echo "Imported $DEST ($(stat -c%s "$DEST") bytes)"
+
+      - name: Commit imported asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST=$(jq -r '.destination' .github/asset-import.json)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DEST"
+          if git diff --cached --quiet; then
+            echo "No asset change"
+            exit 0
+          fi
+          git commit -m "asset: import approved rigged neutral avatar"
+          git push origin HEAD:fix/wardrobe-real-base
