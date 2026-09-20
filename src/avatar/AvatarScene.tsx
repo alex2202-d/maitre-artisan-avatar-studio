@@ -25,6 +25,7 @@ function createWardrobeMaterial(
   material: Material,
   topColor: string,
   bottomColor: string,
+  faceId: string,
   debugBind: boolean,
 ) {
   const standard = material as MeshStandardMaterial
@@ -33,10 +34,12 @@ function createWardrobeMaterial(
   const patched = standard.clone()
   const top = new Color(topColor)
   const bottom = new Color(bottomColor)
+  const replaceBakedMouth = faceId !== 'face-classic'
 
   patched.onBeforeCompile = (shader) => {
     shader.uniforms.avatarTopColor = { value: top }
     shader.uniforms.avatarBottomColor = { value: bottom }
+    shader.uniforms.avatarReplaceMouth = { value: replaceBakedMouth ? 1 : 0 }
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -54,6 +57,7 @@ function createWardrobeMaterial(
         `#include <common>
 uniform vec3 avatarTopColor;
 uniform vec3 avatarBottomColor;
+uniform float avatarReplaceMouth;
 varying vec3 vAvatarBindPosition;`,
       )
       .replace(
@@ -80,6 +84,68 @@ varying vec3 vAvatarBindPosition;`,
           vec3 targetColor = topRegion ? avatarTopColor : avatarBottomColor;
           float preservedShade = clamp(sourceLuma / 0.16, 0.48, 1.45);
           diffuseColor.rgb = clamp(targetColor * preservedShade, 0.0, 1.0);
+        }
+
+        // Remove the baked Meshy mouth directly in the ORIGINAL textured
+        // material. This avoids any flat skin-colour patch on the overlay.
+        if (avatarReplaceMouth > 0.5) {
+          vec3 fp = vAvatarBindPosition;
+          float faceFront = smoothstep(0.125, 0.155, fp.z);
+
+          float mouthAreaX =
+            1.0 - smoothstep(0.090, 0.112, abs(fp.x));
+          float mouthAreaY =
+            smoothstep(0.620, 0.635, fp.y) *
+            (1.0 - smoothstep(0.696, 0.710, fp.y));
+          float mouthArea = mouthAreaX * mouthAreaY * faceFront;
+
+          #ifdef USE_MAP
+            vec3 sampleA =
+              texture2D(map, vMapUv + vec2( 0.012,  0.000)).rgb;
+            vec3 sampleB =
+              texture2D(map, vMapUv + vec2(-0.012,  0.000)).rgb;
+            vec3 sampleC =
+              texture2D(map, vMapUv + vec2( 0.000,  0.014)).rgb;
+            vec3 sampleD =
+              texture2D(map, vMapUv + vec2( 0.000, -0.014)).rgb;
+
+            vec3 cleanSample = sampleA;
+            float cleanLuma =
+              dot(cleanSample, vec3(0.299, 0.587, 0.114));
+
+            float lumaB =
+              dot(sampleB, vec3(0.299, 0.587, 0.114));
+            if (lumaB > cleanLuma) {
+              cleanSample = sampleB;
+              cleanLuma = lumaB;
+            }
+
+            float lumaC =
+              dot(sampleC, vec3(0.299, 0.587, 0.114));
+            if (lumaC > cleanLuma) {
+              cleanSample = sampleC;
+              cleanLuma = lumaC;
+            }
+
+            float lumaD =
+              dot(sampleD, vec3(0.299, 0.587, 0.114));
+            if (lumaD > cleanLuma) {
+              cleanSample = sampleD;
+              cleanLuma = lumaD;
+            }
+
+            float currentLuma =
+              dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+
+            // Only replace pixels that are clearly darker than nearby face
+            // texture. Natural skin shading remains untouched.
+            float bakedMouthMask =
+              mouthArea *
+              smoothstep(0.055, 0.145, cleanLuma - currentLuma);
+
+            diffuseColor.rgb =
+              mix(diffuseColor.rgb, cleanSample, bakedMouthMask);
+          #endif
         }`,
       )
 
@@ -104,7 +170,7 @@ varying vec3 vAvatarBindPosition;`,
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-v5-${topColor}-${bottomColor}-${debugBind}`
+    `ma-wardrobe-v6-${topColor}-${bottomColor}-${faceId}-${debugBind}`
   patched.needsUpdate = true
   return patched
 }
@@ -172,23 +238,10 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
         float front = smoothstep(0.125, 0.155, fp.z);
         vec3 dark = vec3(0.050, 0.036, 0.030);
 
-        float skinShade = clamp(0.992 + (fp.y - 0.67) * 0.035, 0.972, 1.015);
-        vec3 cleanSkin = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
-
-        // Erase only the baked mouth. Eyes are deliberately untouched.
-        float cleanMouthX =
-          1.0 - smoothstep(0.094, 0.112, abs(fp.x));
-        float cleanMouthY =
-          smoothstep(0.618, 0.632, fp.y) *
-          (1.0 - smoothstep(0.696, 0.710, fp.y));
-
-        // Wider and firmer cleanup mask so the original baked Meshy mouth
-        // cannot show through underneath the interchangeable expression.
-        float mouthPatchSoft = cleanMouthX * cleanMouthY * front;
-        float mouthPatch = smoothstep(0.18, 0.42, mouthPatchSoft);
-
-        float overlayAlpha = mouthPatch;
-        vec3 overlayColor = cleanSkin;
+        // Draw only the selected expression. The baked mouth is removed in
+        // the textured base material, so this layer never paints a skin patch.
+        float overlayAlpha = 0.0;
+        vec3 overlayColor = vec3(0.0);
 
         bool smiling =
           avatarFaceExpression > 0.5 && avatarFaceExpression < 1.5;
@@ -258,12 +311,6 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
 
         overlayAlpha = clamp(overlayAlpha, 0.0, 1.0);
 
-        // Fully cover the centre of the cleanup patch. The soft falloff is kept
-        // only at the perimeter so the transition still blends into the head.
-        if (mouthPatch > 0.55) {
-          overlayAlpha = 1.0;
-        }
-
         diffuseColor.rgb = overlayColor;
         diffuseColor.a = overlayAlpha;`,
       )
@@ -312,6 +359,7 @@ function ProductionModel({
             material,
             topColor,
             bottomColor,
+            faceId,
             debugBind,
           ),
         )
@@ -320,6 +368,7 @@ function ProductionModel({
           mesh.material,
           topColor,
           bottomColor,
+          faceId,
           debugBind,
         )
       }
