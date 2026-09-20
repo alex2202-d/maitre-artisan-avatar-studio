@@ -1,6 +1,7 @@
 import type { AvatarConfigV2 } from './avatarConfig'
 import {
   bottomOptions,
+  faceOptions,
   skinTones,
   topOptions,
   wardrobeCategories,
@@ -81,6 +82,26 @@ export default function MobileWardrobeControls({
               </button>
             ))}
           </div>
+        ) : activeCategory === 'face' ? (
+          <div className="mobile-face-strip" aria-label="Expressions du visage">
+            {faceOptions.map((face) => (
+              <button
+                key={face.id}
+                type="button"
+                className={config.faceId === face.id ? 'mobile-face-choice active' : 'mobile-face-choice'}
+                onClick={() => onUpdateConfig({ faceId: face.id })}
+                aria-label={face.label}
+                aria-pressed={config.faceId === face.id}
+              >
+                <span className={`face-glyph ${face.id}`}>
+                  <i className="eye left" />
+                  <i className="eye right" />
+                  <i className="mouth" />
+                </span>
+                <small>{face.label}</small>
+              </button>
+            ))}
+          </div>
         ) : activeCategory === 'top' ? (
           <div className="mobile-outfit-strip" aria-label="Hauts">
             {topOptions.map((item) => (
@@ -116,7 +137,7 @@ export default function MobileWardrobeControls({
         ) : (
           <div className="mobile-dock-hint">
             <span>‹</span>
-            <p>Flèches : accessoires, couleurs, hauts et bas</p>
+            <p>Flèches : visage, accessoires, couleurs, hauts et bas</p>
             <span>›</span>
           </div>
         )}
