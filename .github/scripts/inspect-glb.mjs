@@ -67,3 +67,29 @@ console.log(JSON.stringify({
   skins: (json.skins ?? []).map((s,i)=>({index:i,name:s.name ?? null,skeleton:s.skeleton ?? null,joints:s.joints?.length ?? 0})),
   materials:(json.materials ?? []).map((m,i)=>({index:i,name:m.name ?? null})),
 }, null, 2))
+
+
+console.log('=== MORPH TARGETS ===')
+meshes.forEach((mesh, mi) => {
+  ;(mesh.primitives ?? []).forEach((primitive, pi) => {
+    console.log(JSON.stringify({
+      meshIndex: mi,
+      meshName: mesh.name ?? null,
+      primitiveIndex: pi,
+      morphTargetCount: primitive.targets?.length ?? 0,
+      morphTargetNames: mesh.extras?.targetNames ?? null,
+      attributes: primitive.attributes ?? null,
+    }))
+  })
+})
+
+console.log('=== ALL NODE NAMES ===')
+nodes.forEach((node, i) => {
+  console.log(JSON.stringify({
+    index: i,
+    name: node.name ?? null,
+    mesh: node.mesh ?? null,
+    skin: node.skin ?? null,
+    children: node.children ?? null,
+  }))
+})
