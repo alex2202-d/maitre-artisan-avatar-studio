@@ -3,7 +3,13 @@ import path from 'node:path'
 import { chromium } from 'playwright'
 import { PNG } from 'pngjs'
 
-// Validates the actual rendered head area of the rigged 3D face overlay.
+const sceneSource = fs.readFileSync('src/avatar/AvatarScene.tsx', 'utf8')
+for (const forbidden of ['createFaceOverlayMaterial', '__face_overlay', 'avatarReplaceMouth', 'onBeforeCompile']) {
+  if (sceneSource.includes(forbidden)) {
+    throw new Error(`Forbidden legacy face-overlay code still present: ${forbidden}`)
+  }
+}
+
 const url = process.env.AVATAR_URL ?? 'http://127.0.0.1:5173'
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
@@ -24,38 +30,6 @@ page.on('console', (message) => {
   }
 })
 
-await page.goto(`${url}?debugBind=1`, { waitUntil: 'networkidle' })
-await page.waitForSelector('canvas')
-await page.waitForTimeout(1200)
-const bindBuffer = await page.locator('canvas').screenshot({ type: 'png' })
-fs.writeFileSync(path.join(outputDir, 'bind-position-debug.png'), bindBuffer)
-const bindPng = PNG.sync.read(bindBuffer)
-
-function decodeBindAt(xf, yf, label) {
-  const x = Math.max(0, Math.min(bindPng.width - 1, Math.round(bindPng.width * xf)))
-  const y = Math.max(0, Math.min(bindPng.height - 1, Math.round(bindPng.height * yf)))
-  const radius = 3
-  let r = 0, g = 0, b = 0, n = 0
-  for (let yy = Math.max(0, y - radius); yy <= Math.min(bindPng.height - 1, y + radius); yy++) {
-    for (let xx = Math.max(0, x - radius); xx <= Math.min(bindPng.width - 1, x + radius); xx++) {
-      const i = (bindPng.width * yy + xx) * 4
-      r += bindPng.data[i]
-      g += bindPng.data[i + 1]
-      b += bindPng.data[i + 2]
-      n++
-    }
-  }
-  r /= n; g /= n; b /= n
-  const px = (r / 255) * 0.70 - 0.35
-  const py = (g / 255) * 1.10
-  const pz = (b / 255) * 0.54 - 0.27
-  console.log(`BIND_SAMPLE ${label}: screen=(${x},${y}) bind=(${px.toFixed(4)},${py.toFixed(4)},${pz.toFixed(4)}) rgb=(${r.toFixed(1)},${g.toFixed(1)},${b.toFixed(1)})`)
-}
-
-decodeBindAt(0.458, 0.363, 'left-eye')
-decodeBindAt(0.536, 0.363, 'right-eye')
-decodeBindAt(0.500, 0.434, 'mouth')
-
 await page.goto(url, { waitUntil: 'networkidle' })
 await page.waitForSelector('canvas')
 await page.waitForTimeout(1500)
@@ -65,43 +39,60 @@ const faceCategory = page
   .getByRole('button', { name: 'Visage' })
   .first()
 await faceCategory.click()
-await page.getByRole('button', { name: 'Classique' }).waitFor()
+await page.getByRole('button', { name: 'Original 3D' }).first().waitFor()
 
-const faces = ['Classique', 'Souriant', 'Déterminé', 'Surpris']
-const captures = new Map()
-
-for (const face of faces) {
-  await page.getByRole('button', { name: face }).click()
-  await page.waitForTimeout(900)
-
-  const storedFaceId = await page.evaluate(() => {
-    const raw = localStorage.getItem('maitre-artisan-avatar-v2')
-    return raw ? JSON.parse(raw).faceId : null
-  })
-  const pressedFaces = await page
-    .locator('button[aria-pressed="true"]')
-    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')))
-  console.log(`FACE_STATE ${face}: stored=${storedFaceId} pressed=${pressedFaces.join(',')}`)
-
-  const buffer = await page.locator('canvas').screenshot({ type: 'png' })
-  fs.writeFileSync(path.join(outputDir, `${face}.png`), buffer)
-
-  const png = PNG.sync.read(buffer)
-  const x0 = Math.floor(png.width * 0.32)
-  const x1 = Math.floor(png.width * 0.68)
-  const y0 = Math.floor(png.height * 0.10)
-  const y1 = Math.floor(png.height * 0.50)
-
-  const pixels = []
-  for (let y = y0; y < y1; y++) {
-    for (let x = x0; x < x1; x++) {
-      const i = (png.width * y + x) * 4
-      pixels.push(png.data[i], png.data[i + 1], png.data[i + 2], png.data[i + 3])
-    }
+for (const removed of ['Souriant', 'Déterminé', 'Surpris']) {
+  if (await page.getByRole('button', { name: removed }).count()) {
+    throw new Error(`Legacy synthetic face option is still exposed: ${removed}`)
   }
+}
 
-  captures.set(face, { pixels, width: x1 - x0, height: y1 - y0 })
-  console.log(`${face}: face crop ${x1 - x0}x${y1 - y0}`)
+async function capture(name) {
+  await page.waitForTimeout(1000)
+  const buffer = await page.locator('canvas').screenshot({ type: 'png' })
+  fs.writeFileSync(path.join(outputDir, `${name}.png`), buffer)
+  return PNG.sync.read(buffer)
+}
+
+const chantier = await capture('outfit-chantier')
+
+const outfitCategory = page
+  .getByRole('navigation', { name: 'Catégories du vestiaire' })
+  .getByRole('button', { name: 'Tenue' })
+  .first()
+await outfitCategory.click()
+await page.getByRole('button', { name: 'Électricien' }).first().click()
+await page.waitForTimeout(1800)
+
+const stored = await page.evaluate(() => {
+  const raw = localStorage.getItem('maitre-artisan-avatar-v3')
+  return raw ? JSON.parse(raw) : null
+})
+if (stored?.outfitPresetId !== 'outfit-electricien') {
+  throw new Error(`Expected outfit-electricien in v3 storage, got ${stored?.outfitPresetId}`)
+}
+
+const electricien = await capture('outfit-electricien')
+
+if (chantier.width !== electricien.width || chantier.height !== electricien.height) {
+  throw new Error('Mismatched outfit captures')
+}
+
+let changed = 0
+for (let y = 0; y < chantier.height; y++) {
+  for (let x = 0; x < chantier.width; x++) {
+    const i = (chantier.width * y + x) * 4
+    const d =
+      Math.abs(chantier.data[i] - electricien.data[i]) +
+      Math.abs(chantier.data[i + 1] - electricien.data[i + 1]) +
+      Math.abs(chantier.data[i + 2] - electricien.data[i + 2])
+    if (d >= 36) changed++
+  }
+}
+
+console.log(`Rigged outfit switch: ${changed} changed pixels`)
+if (changed < 1500) {
+  throw new Error(`Rigged outfit switch is not visually effective enough (${changed} changed pixels)`)
 }
 
 await browser.close()
@@ -112,54 +103,4 @@ if (errors.length) {
   process.exit(1)
 }
 
-function changedPixels(a, b, threshold = 28) {
-  if (a.pixels.length !== b.pixels.length) throw new Error('Mismatched crop sizes')
-  let changed = 0
-  for (let i = 0; i < a.pixels.length; i += 4) {
-    const d =
-      Math.abs(a.pixels[i] - b.pixels[i]) +
-      Math.abs(a.pixels[i + 1] - b.pixels[i + 1]) +
-      Math.abs(a.pixels[i + 2] - b.pixels[i + 2])
-    if (d >= threshold) changed++
-  }
-  return changed
-}
-
-const classic = captures.get('Classique')
-if (!classic) throw new Error('Missing classic capture')
-
-const minimumChanges = {
-  Souriant: 300,
-  Déterminé: 300,
-  Surpris: 180,
-}
-
-for (const face of faces.slice(1)) {
-  const capture = captures.get(face)
-  const changed = changedPixels(classic, capture)
-  const minimum = minimumChanges[face] ?? 180
-  console.log(`${face}: ${changed} changed pixels inside the head crop vs Classique`)
-  if (changed < minimum) {
-    console.error(
-      `Face render smoke test failed: ${face} does not visibly change the head crop enough (${changed} pixels; minimum ${minimum}).`,
-    )
-    process.exit(1)
-  }
-}
-
-for (let i = 1; i < faces.length; i++) {
-  for (let j = i + 1; j < faces.length; j++) {
-    const a = captures.get(faces[i])
-    const b = captures.get(faces[j])
-    const changed = changedPixels(a, b)
-    console.log(`${faces[i]} vs ${faces[j]}: ${changed} changed face pixels`)
-    if (changed < 120) {
-      console.error(
-        `Face render smoke test failed: ${faces[i]} and ${faces[j]} are visually too similar.`,
-      )
-      process.exit(1)
-    }
-  }
-}
-
-console.log('Face render smoke test passed: the actual head area visibly changes for all face assets.')
+console.log('Modular wardrobe smoke test passed: no face overlay code and rigged outfit switching is visible.')
