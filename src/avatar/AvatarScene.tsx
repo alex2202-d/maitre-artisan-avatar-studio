@@ -26,122 +26,7 @@ const SLOT_URLS = {
   shoes: '/assets/avatar/v2/outfit01/shoes_work_boots_v2.glb',
 } as const
 
-function createWardrobeMaterial(
-  material: Material,
-  topColor: string,
-  bottomColor: string,
-  helmetColor: string,
-  gloveColor: string,
-  shoeColor: string,
-) {
-  const standard = material as MeshStandardMaterial
-  if (!standard.isMeshStandardMaterial) return material
-
-  const patched = standard.clone()
-  const top = new Color(topColor)
-  const bottom = new Color(bottomColor)
-  const helmet = new Color(helmetColor)
-  const gloves = new Color(gloveColor)
-  const shoes = new Color(shoeColor)
-
-  patched.onBeforeCompile = (shader) => {
-    shader.uniforms.maTopColor = { value: top }
-    shader.uniforms.maBottomColor = { value: bottom }
-    shader.uniforms.maHelmetColor = { value: helmet }
-    shader.uniforms.maGloveColor = { value: gloves }
-    shader.uniforms.maShoeColor = { value: shoes }
-
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        '#include <common>\nvarying vec3 vMaBindPosition;',
-      )
-      .replace(
-        '#include <begin_vertex>',
-        '#include <begin_vertex>\nvMaBindPosition = position;',
-      )
-
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-uniform vec3 maTopColor;
-uniform vec3 maBottomColor;
-uniform vec3 maHelmetColor;
-uniform vec3 maGloveColor;
-uniform vec3 maShoeColor;
-varying vec3 vMaBindPosition;`,
-      )
-      .replace(
-        '#include <map_fragment>',
-        `#include <map_fragment>
-        vec3 source = diffuseColor.rgb;
-        float r = source.r;
-        float g = source.g;
-        float b = source.b;
-        float y = vMaBindPosition.y;
-        float luma = dot(source, vec3(0.299, 0.587, 0.114));
-
-        bool skinLike =
-          r > g * 1.02 &&
-          g > b * 1.01 &&
-          r > 0.34 &&
-          g > 0.22 &&
-          b > 0.14;
-
-        bool yellowGear =
-          r > 0.48 &&
-          g > 0.36 &&
-          b < 0.32 &&
-          r > b * 1.65;
-
-        bool orangeAccent =
-          r > 0.45 &&
-          g > 0.18 &&
-          g < r * 0.78 &&
-          b < g * 0.85;
-
-        bool clothCandidate =
-          !skinLike &&
-          !yellowGear &&
-          !orangeAccent &&
-          luma < 0.80;
-
-        if (y > 0.79 && yellowGear) {
-          float shade = clamp(luma / 0.68, 0.68, 1.18);
-          diffuseColor.rgb = clamp(maHelmetColor * shade, 0.0, 1.0);
-        } else if (y > 0.30 && y < 0.72 && yellowGear) {
-          float shade = clamp(luma / 0.68, 0.66, 1.16);
-          diffuseColor.rgb = clamp(maGloveColor * shade, 0.0, 1.0);
-        } else if (y >= 0.38 && y < 0.72 && clothCandidate) {
-          float shade = clamp(luma / 0.20, 0.52, 1.35);
-          diffuseColor.rgb = clamp(maTopColor * shade, 0.0, 1.0);
-        } else if (y >= 0.12 && y < 0.42 && clothCandidate) {
-          float shade = clamp(luma / 0.20, 0.52, 1.35);
-          diffuseColor.rgb = clamp(maBottomColor * shade, 0.0, 1.0);
-        } else if (y < 0.16 && !skinLike) {
-          float shade = clamp(luma / 0.26, 0.52, 1.35);
-          diffuseColor.rgb = clamp(maShoeColor * shade, 0.0, 1.0);
-        }`,
-      )
-  }
-
-  patched.customProgramCacheKey = () =>
-    `ma-wardrobe-colors-v4-${topColor}-${bottomColor}-${helmetColor}-${gloveColor}-${shoeColor}`
-  patched.needsUpdate = true
-  return patched
-}
-
-function prepareScene(
-  source: Group,
-  colors: {
-    topColor: string
-    bottomColor: string
-    helmetColor: string
-    gloveColor: string
-    shoeColor: string
-  },
-) {
+function prepareScene(source: Group) {
   const instance = clone(source)
 
   instance.traverse((child) => {
@@ -151,59 +36,18 @@ function prepareScene(
     mesh.receiveShadow = true
 
     if (Array.isArray(mesh.material)) {
-      mesh.material = mesh.material.map((material) =>
-        createWardrobeMaterial(
-          material,
-          colors.topColor,
-          colors.bottomColor,
-          colors.helmetColor,
-          colors.gloveColor,
-          colors.shoeColor,
-        ),
-      )
+      mesh.material = mesh.material.map((material) => material.clone())
     } else if (mesh.material) {
-      mesh.material = createWardrobeMaterial(
-        mesh.material,
-        colors.topColor,
-        colors.bottomColor,
-        colors.helmetColor,
-        colors.gloveColor,
-        colors.shoeColor,
-      )
+      mesh.material = mesh.material.clone()
     }
   })
 
   return instance
 }
 
-function ProductionModel({
-  url,
-  topColor,
-  bottomColor,
-  helmetColor,
-  gloveColor,
-  shoeColor,
-}: {
-  url: string
-  topColor: string
-  bottomColor: string
-  helmetColor: string
-  gloveColor: string
-  shoeColor: string
-}) {
+function ProductionModel({ url }: { url: string }) {
   const { scene } = useGLTF(url)
-
-  const model = useMemo(
-    () =>
-      prepareScene(scene, {
-        topColor,
-        bottomColor,
-        helmetColor,
-        gloveColor,
-        shoeColor,
-      }),
-    [scene, topColor, bottomColor, helmetColor, gloveColor, shoeColor],
-  )
+  const model = useMemo(() => prepareScene(scene), [scene])
 
   useEffect(() => {
     return () => {
@@ -639,14 +483,7 @@ function AvatarAssembly({
 
   return (
     <group scale={AVATAR_ROOT_SCALE} position={[0, -AVATAR_HEIGHT_METERS / 2, 0]}>
-      <ProductionModel
-        url={modelUrl}
-        topColor={topColor}
-        bottomColor={bottomColor}
-        helmetColor={helmetColor}
-        gloveColor={gloveColor}
-        shoeColor={shoeColor}
-      />
+      <ProductionModel url={modelUrl} />
 
       <ProceduralHead
         skinColor={skinColor}
@@ -660,8 +497,8 @@ function AvatarAssembly({
         <StaticSlot
           url={SLOT_URLS.headwear}
           color={helmetColor}
-          position={[0, 0.965, 0.065]}
-          scale={[0.36, 0.23, 0.27]}
+          position={[0, 1.020, 0.065]}
+          scale={[0.38, 0.28, 0.27]}
         />
       )}
 
@@ -669,8 +506,8 @@ function AvatarAssembly({
         <StaticSlot
           url={SLOT_URLS.top}
           color={topColor}
-          position={[0, 0.505, 0]}
-          scale={[0.31, 0.34, 0.32]}
+          position={[0, 0.505, 0.055]}
+          scale={[0.32, 0.345, 0.34]}
         />
       )}
 
@@ -678,8 +515,8 @@ function AvatarAssembly({
         <StaticSlot
           url={SLOT_URLS.bottom}
           color={bottomColor}
-          position={[0, 0.292, 0]}
-          scale={[0.25, 0.22, 0.28]}
+          position={[0, 0.292, 0.055]}
+          scale={[0.26, 0.225, 0.30]}
         />
       )}
 
@@ -687,9 +524,9 @@ function AvatarAssembly({
         <PairedSlot
           url={SLOT_URLS.gloves}
           color={gloveColor}
-          leftPosition={[-0.292, 0.415, 0.010]}
-          rightPosition={[0.292, 0.415, 0.010]}
-          scale={[0.145, 0.135, 0.165]}
+          leftPosition={[-0.292, 0.415, 0.190]}
+          rightPosition={[0.292, 0.415, 0.190]}
+          scale={[0.150, 0.140, 0.180]}
         />
       )}
 
@@ -697,9 +534,9 @@ function AvatarAssembly({
         <PairedSlot
           url={SLOT_URLS.shoes}
           color={shoeColor}
-          leftPosition={[-0.116, 0.074, 0.018]}
-          rightPosition={[0.116, 0.074, 0.018]}
-          scale={[0.165, 0.22, 0.152]}
+          leftPosition={[-0.116, 0.074, 0.150]}
+          rightPosition={[0.116, 0.074, 0.150]}
+          scale={[0.175, 0.235, 0.180]}
         />
       )}
 
