@@ -83,20 +83,19 @@ float maFaceEllipse(vec2 p, vec2 center, vec2 radius) {
         if (avatarReplaceFace > 0.5) {
           vec3 fp = vAvatarBindPosition;
 
-          // Measurements from the real V2 GLB/source texture on the visible
-          // face (bind-pose Z is negative after rigging):
-          // eyes ~ (+/-0.069, 0.758, z ~ -0.245)
-          // mouth ~ (0, 0.683, z ~ -0.164)
-          float front = smoothstep(0.135, 0.165, -fp.z);
+          // Camera-facing surface measured directly from the V2 GLB:
+          // eye-coloured vertices cluster around y 0.71..0.75, z 0.15..0.21.
+          // The lower dark-feature cluster begins around y 0.60..0.66.
+          float front = smoothstep(0.120, 0.165, fp.z);
 
           bool leftEyeZone =
-            maFaceEllipse(fp.xy, vec2(-0.069, 0.758), vec2(0.074, 0.067)) <= 1.0;
+            maFaceEllipse(fp.xy, vec2(-0.060, 0.725), vec2(0.078, 0.070)) <= 1.0;
           bool rightEyeZone =
-            maFaceEllipse(fp.xy, vec2(0.069, 0.758), vec2(0.074, 0.067)) <= 1.0;
+            maFaceEllipse(fp.xy, vec2(0.060, 0.725), vec2(0.078, 0.070)) <= 1.0;
           bool mouthZone =
-            abs(fp.x) <= 0.112 &&
-            fp.y >= 0.635 &&
-            fp.y <= 0.725;
+            abs(fp.x) <= 0.118 &&
+            fp.y >= 0.575 &&
+            fp.y <= 0.665;
 
           // Remove the baked classic eyes/pupils/mouth from the original
           // continuous mesh. Lighting is still applied afterwards by the
@@ -108,8 +107,8 @@ float maFaceEllipse(vec2 p, vec2 center, vec2 radius) {
 
           // Independent face asset projected only on the measured front of head.
           vec2 faceUv = vec2(
-            (fp.x + 0.160) / 0.320,
-            (fp.y - 0.600) / 0.230
+            (fp.x + 0.165) / 0.330,
+            (fp.y - 0.555) / 0.240
           );
 
           bool faceUvInside =
