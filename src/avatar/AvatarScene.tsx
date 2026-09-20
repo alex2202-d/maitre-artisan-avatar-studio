@@ -116,15 +116,15 @@ function createFaceOverlayMaterial(skinColor: string, faceId: string) {
 
   const material = new MeshStandardMaterial({
     color: '#ffffff',
-    roughness: 0.88,
+    roughness: 0.9,
     metalness: 0,
     transparent: true,
     opacity: 1,
-    alphaTest: 0.015,
+    alphaTest: 0.01,
     depthWrite: false,
     polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4,
+    polygonOffsetFactor: -3,
+    polygonOffsetUnits: -3,
   })
 
   material.onBeforeCompile = (shader) => {
@@ -166,31 +166,25 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
         `#include <map_fragment>
         vec3 fp = vFaceBindPosition;
 
-        // Measured directly from the rendered V2 avatar:
-        // left eye  = (-0.0645, 0.7814, 0.2181)
-        // right eye = ( 0.0567, 0.7812, 0.2211)
-        // mouth     = ( 0.0010, 0.6631, 0.1567)
+        // Preserve the original FAL/Meshy eyes and pupils exactly as authored.
+        // Only the mouth and, when needed, very small graphic brow/eyelid marks
+        // are changed. This keeps the approved compact South-Park-like DA.
         float front = smoothstep(0.125, 0.155, fp.z);
+        vec3 dark = vec3(0.050, 0.036, 0.030);
 
-        vec2 leftEyeCenter = vec2(-0.061, 0.781);
-        vec2 rightEyeCenter = vec2(0.061, 0.781);
+        float skinShade = clamp(0.992 + (fp.y - 0.67) * 0.035, 0.972, 1.015);
+        vec3 cleanSkin = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
 
-        float cleanLeft =
-          maEllipse(fp.xy, leftEyeCenter, vec2(0.080, 0.073));
-        float cleanRight =
-          maEllipse(fp.xy, rightEyeCenter, vec2(0.080, 0.073));
-        float cleanEyes = max(cleanLeft, cleanRight) * front;
-
+        // Erase only the baked mouth. Eyes are deliberately untouched.
         float cleanMouthX =
-          1.0 - smoothstep(0.098, 0.118, abs(fp.x));
+          1.0 - smoothstep(0.086, 0.104, abs(fp.x));
         float cleanMouthY =
-          smoothstep(0.610, 0.625, fp.y) *
-          (1.0 - smoothstep(0.704, 0.718, fp.y));
-        float cleanMouth = cleanMouthX * cleanMouthY * front;
+          smoothstep(0.625, 0.638, fp.y) *
+          (1.0 - smoothstep(0.690, 0.703, fp.y));
+        float mouthPatch = cleanMouthX * cleanMouthY * front;
 
-        float overlayAlpha = max(cleanEyes, cleanMouth);
-        float skinShade = clamp(0.992 + (fp.y - 0.72) * 0.045, 0.965, 1.02);
-        vec3 overlayColor = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
+        float overlayAlpha = mouthPatch;
+        vec3 overlayColor = cleanSkin;
 
         bool smiling =
           avatarFaceExpression > 0.5 && avatarFaceExpression < 1.5;
@@ -199,128 +193,89 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
         bool surprised =
           avatarFaceExpression > 2.5;
 
-        float eyeRx = surprised ? 0.060 : 0.055;
-        float eyeRy =
-          smiling ? 0.050 : (determined ? 0.038 : 0.069);
+        if (smiling) {
+          // Same visual language as the classic face: one simple dark curve,
+          // only a little wider and more cheerful. No teeth, no extra volume.
+          float mx = fp.x;
+          float width = 0.067;
+          float normalized = clamp(abs(mx) / width, 0.0, 1.0);
+          float smileY = 0.647 + 0.026 * normalized * normalized;
+          float mouth =
+            (1.0 - smoothstep(0.0045, 0.0070, abs(fp.y - smileY))) *
+            (1.0 - smoothstep(width - 0.010, width, abs(mx))) *
+            front;
 
-        float leftEye =
-          maEllipse(fp.xy, leftEyeCenter, vec2(eyeRx, eyeRy)) * front;
-        float rightEye =
-          maEllipse(fp.xy, rightEyeCenter, vec2(eyeRx, eyeRy)) * front;
-        float eyeWhite = max(leftEye, rightEye);
-        overlayColor = mix(overlayColor, vec3(0.985), eyeWhite);
-        overlayAlpha = max(overlayAlpha, eyeWhite);
+          overlayColor = mix(overlayColor, dark, mouth);
+          overlayAlpha = max(overlayAlpha, mouth);
+        } else if (determined) {
+          // Minimal straight mouth.
+          float mouth =
+            maSegment(
+              fp.xy,
+              vec2(-0.047, 0.656),
+              vec2(0.047, 0.656),
+              0.0060
+            ) * front;
+          overlayColor = mix(overlayColor, dark, mouth);
+          overlayAlpha = max(overlayAlpha, mouth);
 
-        float pupilY =
-          smiling ? 0.786 : (determined ? 0.777 : 0.781);
-        float pupilRx = surprised ? 0.0145 : 0.0125;
-        float pupilRy =
-          surprised ? 0.0180 : (determined ? 0.0100 : 0.0135);
-
-        float leftPupil =
-          maEllipse(
-            fp.xy,
-            vec2(-0.061, pupilY),
-            vec2(pupilRx, pupilRy)
-          ) * front;
-        float rightPupil =
-          maEllipse(
-            fp.xy,
-            vec2(0.061, pupilY),
-            vec2(pupilRx, pupilRy)
-          ) * front;
-        float pupil = max(leftPupil, rightPupil);
-        overlayColor = mix(
-          overlayColor,
-          vec3(0.035, 0.026, 0.021),
-          pupil
-        );
-        overlayAlpha = max(overlayAlpha, pupil);
-
-        if (determined) {
+          // Thin brows only. They sit above the original eyes and do not
+          // replace or enlarge them.
           float browL =
             maSegment(
               fp.xy,
-              vec2(-0.120, 0.837),
-              vec2(-0.018, 0.809),
-              0.0095
+              vec2(-0.108, 0.838),
+              vec2(-0.020, 0.816),
+              0.0065
             ) * front;
           float browR =
             maSegment(
               fp.xy,
-              vec2(0.018, 0.809),
-              vec2(0.120, 0.837),
-              0.0095
+              vec2(0.020, 0.816),
+              vec2(0.108, 0.838),
+              0.0065
             ) * front;
           float brows = max(browL, browR);
-          overlayColor = mix(
-            overlayColor,
-            vec3(0.048, 0.034, 0.028),
-            brows
-          );
+          overlayColor = mix(overlayColor, dark, brows);
           overlayAlpha = max(overlayAlpha, brows);
 
-          float mouth =
+          // Very small upper-lid masks to tighten the gaze while retaining the
+          // exact original eye shapes underneath.
+          float lidL =
             maSegment(
               fp.xy,
-              vec2(-0.054, 0.658),
-              vec2(0.054, 0.658),
-              0.0080
+              vec2(-0.105, 0.808),
+              vec2(-0.020, 0.792),
+              0.0050
             ) * front;
-          overlayColor = mix(
-            overlayColor,
-            vec3(0.048, 0.034, 0.028),
-            mouth
-          );
-          overlayAlpha = max(overlayAlpha, mouth);
+          float lidR =
+            maSegment(
+              fp.xy,
+              vec2(0.020, 0.792),
+              vec2(0.105, 0.808),
+              0.0050
+            ) * front;
+          float lids = max(lidL, lidR);
+          overlayColor = mix(overlayColor, cleanSkin, lids);
+          overlayAlpha = max(overlayAlpha, lids);
         } else if (surprised) {
-          float mouthOuter =
+          // Small graphic O mouth, deliberately restrained.
+          float outer =
             maEllipse(
               fp.xy,
-              vec2(0.0, 0.660),
-              vec2(0.032, 0.041)
+              vec2(0.0, 0.658),
+              vec2(0.020, 0.026)
             ) * front;
-          float mouthInner =
+          float inner =
             maEllipse(
               fp.xy,
-              vec2(0.0, 0.660),
-              vec2(0.015, 0.022)
+              vec2(0.0, 0.658),
+              vec2(0.010, 0.014)
             ) * front;
-          float mouthRing = clamp(mouthOuter - mouthInner, 0.0, 1.0);
-          overlayColor = mix(
-            overlayColor,
-            vec3(0.044, 0.030, 0.026),
-            mouthRing
-          );
-          overlayAlpha = max(overlayAlpha, mouthRing);
-        } else if (smiling) {
-          // Deliberately broader and lower than the baked classic smile so the
-          // wardrobe choice reads immediately at normal camera distance.
-          float mx = fp.x;
-          float width = 0.082;
-          float normalized = clamp(abs(mx) / width, 0.0, 1.0);
-          float smileY = 0.638 + 0.050 * normalized * normalized;
-          float mouth =
-            (1.0 - smoothstep(0.0060, 0.0100, abs(fp.y - smileY))) *
-            (1.0 - smoothstep(width - 0.014, width, abs(mx))) *
-            front;
+          float ring = clamp(outer - inner, 0.0, 1.0);
 
-          overlayColor = mix(
-            overlayColor,
-            vec3(0.048, 0.034, 0.028),
-            mouth
-          );
-          overlayAlpha = max(overlayAlpha, mouth);
-
-          // Small white lower highlight makes the smile visibly distinct while
-          // preserving the simple South-Park-like graphic language.
-          float toothY = 0.648 + 0.025 * normalized * normalized;
-          float tooth =
-            (1.0 - smoothstep(0.0035, 0.0065, abs(fp.y - toothY))) *
-            (1.0 - smoothstep(0.050, 0.062, abs(mx))) *
-            front;
-          overlayColor = mix(overlayColor, vec3(0.97), tooth);
-          overlayAlpha = max(overlayAlpha, tooth);
+          overlayColor = mix(overlayColor, dark, ring);
+          overlayAlpha = max(overlayAlpha, ring);
         }
 
         diffuseColor.rgb = overlayColor;
@@ -329,7 +284,7 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
   }
 
   material.customProgramCacheKey = () =>
-    `ma-face-overlay-v1-${skinColor}-${faceId}`
+    `ma-face-overlay-da-v2-${skinColor}-${faceId}`
   material.needsUpdate = true
   return material
 }
