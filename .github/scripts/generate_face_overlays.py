@@ -157,6 +157,61 @@ def percentile(values, pct):
     return data[max(0, min(len(data) - 1, idx))]
 
 
+def sample_texture_at_uv(source, uv):
+    u, v = uv
+    x = max(0, min(source.width - 1, int(round(u * (source.width - 1)))))
+    y = max(0, min(source.height - 1, int(round((1.0 - v) * (source.height - 1)))))
+    return source.getpixel((x, y))
+
+
+def inspect_feature_vertices(gltf, bin_chunk, source):
+    primitive = gltf["meshes"][0]["primitives"][0]
+    positions = read_accessor(gltf, bin_chunk, primitive["attributes"]["POSITION"])
+    uvs = read_accessor(gltf, bin_chunk, primitive["attributes"]["TEXCOORD_0"])
+
+    eye_candidates = []
+    mouth_candidates = []
+
+    for pos, uv in zip(positions, uvs):
+        x, y, z = pos
+        if abs(x) > 0.17:
+            continue
+
+        r, g, b, a = sample_texture_at_uv(source, uv)
+        mx, mn = max(r, g, b), min(r, g, b)
+        neutral = mx - mn < 45
+
+        if 0.735 <= y <= 0.865 and neutral and mn >= 175:
+            eye_candidates.append(pos)
+
+        if 0.600 <= y <= 0.735 and mx <= 120:
+            mouth_candidates.append(pos)
+
+    def summarize(rows):
+        if not rows:
+            return None
+        return {
+            "count": len(rows),
+            "x": (
+                percentile([p[0] for p in rows], 0.05),
+                percentile([p[0] for p in rows], 0.50),
+                percentile([p[0] for p in rows], 0.95),
+            ),
+            "y": (
+                percentile([p[1] for p in rows], 0.05),
+                percentile([p[1] for p in rows], 0.50),
+                percentile([p[1] for p in rows], 0.95),
+            ),
+            "z": (
+                percentile([p[2] for p in rows], 0.05),
+                percentile([p[2] for p in rows], 0.50),
+                percentile([p[2] for p in rows], 0.95),
+            ),
+        }
+
+    return {"eyes": summarize(eye_candidates), "mouth": summarize(mouth_candidates)}
+
+
 def detect_landmarks(source, face_map):
     whites = {"left": [], "right": []}
     dark_eye = []
@@ -391,6 +446,9 @@ def main():
         source_glb = SKIN_DIR / f"avatar_workwear_v2_{skin_id}.glb"
         gltf, bin_chunk = read_glb(source_glb)
         source = embedded_base_color(gltf, bin_chunk)
+
+        vertex_features = inspect_feature_vertices(gltf, bin_chunk, source)
+        print(f"VERTEX_FEATURES {skin_id}: {json.dumps(vertex_features)}")
 
         face_map = build_face_pixel_map(gltf, bin_chunk, source.width, source.height)
         if len(face_map) < 500:
