@@ -100,7 +100,6 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
         // of the head, then redraw the selected expression directly on the mesh.
         vec2 faceP = vec2(vAvatarBindPosition.x, vAvatarBindPosition.y);
         bool faceFront =
-          vAvatarBindPosition.z > 0.08 &&
           vAvatarBindPosition.y > 0.60 &&
           vAvatarBindPosition.y < 0.95 &&
           abs(vAvatarBindPosition.x) < 0.225;
@@ -109,7 +108,7 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
         bool bakedDark = r < 0.22 && g < 0.22 && b < 0.22;
 
         if (faceFront && (bakedWhite || bakedDark)) {
-          float skinShade = clamp(0.92 + (vAvatarBindPosition.y - 0.74) * 0.12, 0.84, 1.06);
+          float skinShade = clamp(0.96 + (vAvatarBindPosition.y - 0.74) * 0.08, 0.90, 1.06);
           diffuseColor.rgb = clamp(avatarSkinColor * skinShade, 0.0, 1.0);
         }
 
@@ -118,9 +117,9 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
           bool surprised = avatarExpression > 2.5;
           bool smiling = avatarExpression > 0.5 && avatarExpression < 1.5;
 
-          float eyeRy = determined ? 0.052 : (surprised ? 0.078 : 0.068);
-          float eyeRx = surprised ? 0.060 : 0.055;
-          float eyeY = 0.795;
+          float eyeRy = determined ? 0.040 : (surprised ? 0.083 : (smiling ? 0.054 : 0.068));
+          float eyeRx = surprised ? 0.064 : (determined ? 0.060 : 0.055);
+          float eyeY = determined ? 0.800 : 0.795;
 
           float leftEye = maEllipse(faceP, vec2(-0.058, eyeY), vec2(eyeRx, eyeRy));
           float rightEye = maEllipse(faceP, vec2(0.058, eyeY), vec2(eyeRx, eyeRy));
@@ -128,29 +127,29 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
 
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.985), eyeMask);
 
-          float pupilY = eyeY + (smiling ? 0.006 : 0.0);
-          float pupilRadius = surprised ? 0.012 : 0.014;
+          float pupilY = eyeY + (smiling ? 0.008 : (determined ? -0.002 : 0.0));
+          float pupilRadius = surprised ? 0.013 : (determined ? 0.012 : 0.014);
           float leftPupil = maEllipse(faceP, vec2(-0.058, pupilY), vec2(pupilRadius));
           float rightPupil = maEllipse(faceP, vec2(0.058, pupilY), vec2(pupilRadius));
           float pupilMask = max(leftPupil, rightPupil);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.035, 0.032, 0.030), pupilMask);
 
           if (determined) {
-            float browL = maSegment(faceP, vec2(-0.108, 0.868), vec2(-0.018, 0.845), 0.009);
-            float browR = maSegment(faceP, vec2(0.018, 0.845), vec2(0.108, 0.868), 0.009);
+            float browL = maSegment(faceP, vec2(-0.112, 0.865), vec2(-0.018, 0.835), 0.011);
+            float browR = maSegment(faceP, vec2(0.018, 0.835), vec2(0.112, 0.865), 0.011);
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.060, 0.050, 0.045), max(browL, browR));
 
             float firmMouth = maSegment(faceP, vec2(-0.040, 0.653), vec2(0.040, 0.653), 0.008);
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.055, 0.045, 0.040), firmMouth);
           } else if (surprised) {
-            float mouthOuter = maEllipse(faceP, vec2(0.0, 0.650), vec2(0.028, 0.037));
+            float mouthOuter = maEllipse(faceP, vec2(0.0, 0.650), vec2(0.034, 0.044));
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.050, 0.040, 0.038), mouthOuter);
           } else {
             float mouthX = faceP.x;
             float curveY = smiling
-              ? 0.640 + 2.25 * mouthX * mouthX
+              ? 0.626 + 3.80 * mouthX * mouthX
               : 0.650 + 1.65 * mouthX * mouthX;
-            float mouthWidth = smiling ? 0.062 : 0.050;
+            float mouthWidth = smiling ? 0.078 : 0.050;
             float mouthBand =
               (1.0 - smoothstep(smiling ? 0.007 : 0.006, smiling ? 0.010 : 0.009, abs(faceP.y - curveY))) *
               (1.0 - smoothstep(mouthWidth - 0.008, mouthWidth, abs(mouthX)));
@@ -161,7 +160,7 @@ float maSegment(vec2 p, vec2 a, vec2 b, float width) {
   }
 
   patched.customProgramCacheKey = () =>
-    `ma-wardrobe-face-v2-${topColor}-${bottomColor}-${skinColor}-${faceId}`
+    `ma-wardrobe-face-v3-${topColor}-${bottomColor}-${skinColor}-${faceId}`
   patched.needsUpdate = true
   return patched
 }
