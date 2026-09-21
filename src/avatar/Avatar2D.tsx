@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useId, type CSSProperties } from 'react'
 import {
   PREMIUM_ATLAS_SIZE,
   PREMIUM_ATLAS_URI,
@@ -184,6 +184,9 @@ export default function Avatar2D({
   style?: CSSProperties
 }) {
   const exactPreset = presetMap[preset]
+  const baseMaskId = useId().replace(/:/g, '')
+  const hideHands = !!gloveMap[config.gloves]
+  const hideFeet = !!shoeMap[config.shoes]
 
   return (
     <svg
@@ -200,6 +203,24 @@ export default function Avatar2D({
         />
       ) : (
         <>
+          <defs>
+            <mask id={baseMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width={CANVAS_W} height={CANVAS_H}>
+              <rect x="0" y="0" width={CANVAS_W} height={CANVAS_H} fill="white" />
+              {hideHands && (
+                <>
+                  <ellipse cx="215" cy="952" rx="95" ry="88" fill="black" />
+                  <ellipse cx="907" cy="952" rx="95" ry="88" fill="black" />
+                </>
+              )}
+              {hideFeet && (
+                <>
+                  <rect x="280" y="1215" width="245" height="185" rx="60" fill="black" />
+                  <rect x="597" y="1215" width="245" height="185" rx="60" fill="black" />
+                </>
+              )}
+            </mask>
+          </defs>
+
           <image
             href={PREMIUM_BASE_URI}
             x="0"
@@ -207,6 +228,7 @@ export default function Avatar2D({
             width={CANVAS_W}
             height={CANVAS_H}
             preserveAspectRatio="xMidYMid meet"
+            mask={`url(#${baseMaskId})`}
           />
 
           <RasterSprite
