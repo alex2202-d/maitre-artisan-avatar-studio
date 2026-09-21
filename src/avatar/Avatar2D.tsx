@@ -14,6 +14,10 @@ import {
   EXTRA_MOOD_IMAGES,
   type ExtraMoodTradeId,
 } from '../gallery/mood-images-extra'
+import {
+  VOIRIE_MOOD_IMAGES,
+  type VoirieMoodTradeId,
+} from '../gallery/mood-images-voirie'
 
 export type AvatarPresetId =
   | 'chantier'
@@ -30,18 +34,22 @@ const presetMap: Record<AvatarPresetId, PremiumSpriteKey> = {
   voirie: 'presets_5',
 }
 
-type MoodReadyPreset = MoodTradeId | ExtraMoodTradeId
+type MoodReadyPreset = MoodTradeId | ExtraMoodTradeId | VoirieMoodTradeId
 
 function hasMoodGallery(preset: AvatarPresetId): preset is MoodReadyPreset {
   return (
     preset === 'chantier' ||
     preset === 'electricien' ||
     preset === 'technicien' ||
-    preset === 'peintre'
+    preset === 'peintre' ||
+    preset === 'voirie'
   )
 }
 
 function moodImage(preset: MoodReadyPreset, mood: MoodId) {
+  if (preset === 'voirie') {
+    return VOIRIE_MOOD_IMAGES[mood]
+  }
   if (preset === 'technicien' || preset === 'peintre') {
     return EXTRA_MOOD_IMAGES[preset][mood]
   }
