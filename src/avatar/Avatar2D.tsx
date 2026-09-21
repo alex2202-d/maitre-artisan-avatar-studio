@@ -144,7 +144,12 @@ function RasterSprite({
     <g transform={transform}>
       <defs>
         <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-          <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+          <rect
+            x={targetX}
+            y={targetY}
+            width={targetW}
+            height={targetH}
+          />
         </clipPath>
       </defs>
 
