@@ -1,264 +1,177 @@
 import { useEffect, useMemo, useState } from 'react'
-import Avatar2D, { type Avatar2DConfig } from './avatar/Avatar2D'
+import Avatar2D, { type AvatarPresetId } from './avatar/Avatar2D'
 
-type PresetId = 'chantier' | 'electricien' | 'technicien' | 'peintre' | 'voirie'
-
-const defaultConfig: Avatar2DConfig = {
-  skin: 'peche',
-  expression: 'neutral',
-  hair: 'none',
-  hairColor: 'brun',
-  headwear: 'hardhat-yellow',
-  top: 'tee-navy',
-  bottom: 'overalls-blue',
-  gloves: 'yellow',
-  shoes: 'boots-brown',
-  accessory: 'none',
+type AvatarCard = {
+  id: AvatarPresetId
+  label: string
+  trade: string
+  description: string
+  tag: string
 }
 
-const outfitPresets: Array<{
-  id: PresetId
-  label: string
-  note: string
-  config: Partial<Avatar2DConfig>
-}> = [
+const avatars: AvatarCard[] = [
   {
     id: 'chantier',
     label: 'Chantier',
-    note: 'Salopette bleue + casque jaune',
-    config: {
-      top: 'tee-navy',
-      bottom: 'overalls-blue',
-      gloves: 'yellow',
-      shoes: 'boots-brown',
-      headwear: 'hardhat-yellow',
-      accessory: 'none',
-    },
+    trade: 'Bâtiment',
+    description: 'Casque jaune · salopette bleue · gants de chantier',
+    tag: 'Polyvalent',
   },
   {
     id: 'electricien',
     label: 'Électricien',
-    note: 'Bleu + bandes réfléchissantes',
-    config: {
-      top: 'jacket-blue',
-      bottom: 'pants-blue',
-      gloves: 'yellow',
-      shoes: 'boots-black',
-      headwear: 'hardhat-blue',
-      accessory: 'belt-electric',
-    },
+    trade: 'Électricité',
+    description: 'Tenue bleue · casque bleu · équipement métier',
+    tag: 'Élec',
   },
   {
     id: 'technicien',
     label: 'Technicien CVC',
-    note: 'Atelier olive + outils',
-    config: {
-      top: 'jacket-olive',
-      bottom: 'cargo-olive',
-      gloves: 'black',
-      shoes: 'boots-brown',
-      headwear: 'none',
-      accessory: 'belt-mechanic',
-    },
+    trade: 'Climatisation',
+    description: 'Tenue atelier kaki · chaussures de sécurité · outils',
+    tag: 'CVC',
   },
   {
     id: 'peintre',
     label: 'Peintre',
-    note: 'Blanc + accessoires peinture',
-    config: {
-      top: 'painter-top',
-      bottom: 'painter-pants',
-      gloves: 'white',
-      shoes: 'boots-white',
-      headwear: 'cap-white',
-      accessory: 'belt-painter',
-    },
+    trade: 'Finition',
+    description: 'Tenue blanche · accessoires peinture · chaussures claires',
+    tag: 'Peinture',
   },
   {
     id: 'voirie',
     label: 'Voirie',
-    note: 'Orange haute visibilité',
-    config: {
-      top: 'hivis-orange',
-      bottom: 'cargo-dark',
-      gloves: 'orange',
-      shoes: 'boots-orange',
-      headwear: 'hardhat-orange',
-      accessory: 'pouch-orange',
-    },
+    trade: 'Travaux publics',
+    description: 'Haute visibilité orange · casque · tenue extérieure',
+    tag: 'TP',
   },
 ]
 
-function readSavedPreset(): PresetId {
-  const value = localStorage.getItem('maitre-artisan-avatar-gallery-preset')
-  return outfitPresets.some((preset) => preset.id === value)
-    ? (value as PresetId)
+function readSaved(): AvatarPresetId {
+  const saved = localStorage.getItem('maitre-artisan-avatar-gallery-preset')
+  return avatars.some((avatar) => avatar.id === saved)
+    ? (saved as AvatarPresetId)
     : 'chantier'
 }
 
 export default function App() {
-  const [activePreset, setActivePreset] = useState<PresetId>(() => readSavedPreset())
+  const [selectedId, setSelectedId] = useState<AvatarPresetId>(() => readSaved())
   const [message, setMessage] = useState('')
-
-  const selectedPreset = useMemo(
-    () => outfitPresets.find((preset) => preset.id === activePreset) ?? outfitPresets[0],
-    [activePreset],
-  )
-
-  const selectedConfig = useMemo(
-    () => ({ ...defaultConfig, ...selectedPreset.config }),
-    [selectedPreset],
+  const selected = useMemo(
+    () => avatars.find((avatar) => avatar.id === selectedId) ?? avatars[0],
+    [selectedId],
   )
 
   useEffect(() => {
-    localStorage.setItem('maitre-artisan-avatar-gallery-preset', activePreset)
-  }, [activePreset])
+    localStorage.setItem('maitre-artisan-avatar-gallery-preset', selectedId)
+  }, [selectedId])
 
   function notify(text: string) {
     setMessage(text)
-    window.setTimeout(() => setMessage(''), 1600)
-  }
-
-  function choosePreset(id: PresetId) {
-    setActivePreset(id)
+    window.setTimeout(() => setMessage(''), 1500)
   }
 
   function randomize() {
-    const choices = outfitPresets.filter((preset) => preset.id !== activePreset)
-    const next = choices[Math.floor(Math.random() * choices.length)] ?? outfitPresets[0]
-    setActivePreset(next.id)
+    const others = avatars.filter((avatar) => avatar.id !== selectedId)
+    const next = others[Math.floor(Math.random() * others.length)] ?? avatars[0]
+    setSelectedId(next.id)
     notify('Nouvel avatar sélectionné')
   }
 
-  function reset() {
-    setActivePreset('chantier')
-    notify('Galerie réinitialisée')
-  }
-
   function save() {
-    localStorage.setItem('maitre-artisan-avatar-gallery-preset', activePreset)
+    localStorage.setItem('maitre-artisan-avatar-gallery-preset', selectedId)
     notify('Avatar enregistré')
   }
 
   return (
-    <main className="studio2d">
-      <aside className="studio-nav">
-        <div className="brand2d">
-          <span className="helmet-logo">⌒</span>
+    <main className="gallery-shell">
+      <aside className="gallery-nav">
+        <div className="gallery-brand">
+          <span className="gallery-logo">⌒</span>
           <div>
             <strong>Maître<br/>Artisan</strong>
-            <small>BÂTIR DE MAIN</small>
+            <small>AVATAR STUDIO</small>
           </div>
         </div>
 
-        <nav aria-label="Galerie des avatars">
-          <button className="active">
-            <span>◆</span>
-            <strong>Galerie</strong>
-          </button>
-        </nav>
-
-        <div style={{ marginTop: 14, padding: '0 14px', color: '#9fb5d2', fontSize: 11, lineHeight: 1.45 }}>
-          Les avatars sont désormais des rendus complets : aucun collage de vêtements ou de coiffures.
+        <div className="gallery-nav-active">
+          <span>◆</span>
+          <strong>Galerie</strong>
         </div>
 
-        <button className="settings-link" onClick={reset}>↺ Réinitialiser</button>
+        <p className="gallery-nav-copy">
+          Personnages complets uniquement.<br/>
+          Aucun vêtement, cheveu ou accessoire n’est collé par-dessus.
+        </p>
+
+        <div className="gallery-version">GALERIE V1 · 5 AVATARS</div>
       </aside>
 
-      <section className="avatar-zone">
-        <div className="mobile-studio-head">
-          <div className="brand2d compact">
-            <span className="helmet-logo">⌒</span>
-            <div>
-              <strong>Maître Artisan</strong>
-              <small>Galerie avatars</small>
-            </div>
-          </div>
-          <button onClick={save}>Valider</button>
-        </div>
-
-        <div className="stage-card">
-          <div className="stage-message left">
+      <section className="gallery-stage">
+        <div className="gallery-stage-card">
+          <div className="gallery-stage-copy left">
             Un artisan<br/>d’aujourd’hui<br/><b>bâtit un monde<br/>meilleur !</b>
           </div>
-          <div className="stage-message right">Crée.<br/>Équipe.<br/>Avance.</div>
+          <div className="gallery-stage-copy right">
+            Crée.<br/>Choisis.<br/>Avance.
+          </div>
 
-          <Avatar2D
-            config={selectedConfig}
-            preset={activePreset}
-            className="main-avatar"
-          />
+          <Avatar2D preset={selected.id} className="gallery-main-avatar" />
 
-          <div className="stage-actions">
+          <div className="gallery-stage-meta">
+            <div>
+              <span>{selected.trade}</span>
+              <strong>{selected.label}</strong>
+              <small>{selected.description}</small>
+            </div>
             <button onClick={randomize}>◈ Avatar aléatoire</button>
-            <span>Avatar complet · sans collage</span>
           </div>
         </div>
-
-        {message && <div className="toast2d">{message}</div>}
+        {message && <div className="gallery-toast">{message}</div>}
       </section>
 
-      <aside className="wardrobe2d">
-        <header>
+      <aside className="gallery-panel">
+        <header className="gallery-header">
           <div>
-            <h1>Galerie d’avatars</h1>
-            <p>Choisis un personnage complet. Le rendu affiché est exactement celui de la carte.</p>
+            <small>VESTIAIRE</small>
+            <h1>Galerie de personnages</h1>
+            <p>Choisis un avatar complet. Le grand aperçu est exactement le même rendu que la carte.</p>
           </div>
-          <button className="validate2d" onClick={save}>✓ Valider mon avatar</button>
+          <button onClick={save} className="gallery-save">✓ Valider</button>
         </header>
 
-        <section className="option-section">
-          <div className="section-title">
-            <div>
-              <small>PERSONNAGES COMPLETS</small>
-              <h2>Choisis ton avatar</h2>
-            </div>
-            <span>{selectedPreset.label}</span>
-          </div>
+        <div className="gallery-grid">
+          {avatars.map((avatar) => (
+            <button
+              key={avatar.id}
+              className={`gallery-card ${selected.id === avatar.id ? 'active' : ''}`}
+              onClick={() => setSelectedId(avatar.id)}
+            >
+              <div className="gallery-card-preview">
+                <Avatar2D preset={avatar.id} className="gallery-card-avatar" />
+              </div>
+              <div className="gallery-card-copy">
+                <span>{avatar.tag}</span>
+                <strong>{avatar.label}</strong>
+                <small>{avatar.description}</small>
+              </div>
+              {selected.id === avatar.id && <b className="gallery-check">✓</b>}
+            </button>
+          ))}
+        </div>
 
-          <div className="preset-grid">
-            {outfitPresets.map((preset) => {
-              const preview = { ...defaultConfig, ...preset.config }
-              return (
-                <button
-                  key={preset.id}
-                  className={'preset-card ' + (activePreset === preset.id ? 'active' : '')}
-                  onClick={() => choosePreset(preset.id)}
-                >
-                  <div className="preset-preview">
-                    <Avatar2D
-                      config={preview}
-                      preset={preset.id}
-                      className="mini-avatar"
-                    />
-                  </div>
-                  <div>
-                    <strong>{preset.label}</strong>
-                    <small>{preset.note}</small>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+        <div className="gallery-next">
+          <strong>Suite du vestiaire</strong>
+          <p>
+            Les prochaines variantes seront produites comme nouveaux personnages complets :
+            autres vêtements, coiffures, carnations et humeurs, sans revenir au système de collage.
+          </p>
+        </div>
 
-          <div style={{
-            marginTop: 18,
-            padding: 14,
-            border: '1px solid #e2e8f1',
-            borderRadius: 14,
-            background: '#f8fbff',
-            color: '#60728c',
-            fontSize: 11,
-            lineHeight: 1.5,
-          }}>
-            Les prochaines coiffures, couleurs de peau et variantes seront ajoutées comme <b>nouveaux personnages complets</b>, pas comme des calques superposés.
-          </div>
-        </section>
-
-        <footer className="wardrobe-footer">
-          <button onClick={reset}>Réinitialiser</button>
+        <footer className="gallery-footer">
+          <button onClick={() => setSelectedId('chantier')}>Réinitialiser</button>
           <button onClick={randomize}>Aléatoire</button>
-          <button className="primary" onClick={save}>Valider</button>
+          <button onClick={save} className="primary">Valider</button>
         </footer>
       </aside>
     </main>
