@@ -214,8 +214,8 @@ export default function Avatar2D({
               )}
               {hideFeet && (
                 <>
-                  <rect x="280" y="1215" width="245" height="185" rx="60" fill="black" />
-                  <rect x="597" y="1215" width="245" height="185" rx="60" fill="black" />
+                  <rect x="250" y="1130" width="300" height="272" rx="70" fill="black" />
+                  <rect x="572" y="1130" width="300" height="272" rx="70" fill="black" />
                 </>
               )}
             </mask>
@@ -287,12 +287,12 @@ export default function Avatar2D({
               <RasterSprite
                 sprite={shoeMap[config.shoes]!}
                 half="left"
-                box={{ x: 240, y: 1140, w: 300, h: 250 }}
+                box={{ x: 220, y: 1115, w: 340, h: 285 }}
               />
               <RasterSprite
                 sprite={shoeMap[config.shoes]!}
                 half="right"
-                box={{ x: 582, y: 1140, w: 300, h: 250 }}
+                box={{ x: 562, y: 1115, w: 340, h: 285 }}
               />
             </>
           )}
