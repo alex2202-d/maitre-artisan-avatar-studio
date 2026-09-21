@@ -5,6 +5,11 @@ import {
   PREMIUM_SPRITES,
   type PremiumSpriteKey,
 } from '../premium/data'
+import {
+  MOOD_IMAGES,
+  type MoodId,
+  type MoodTradeId,
+} from '../gallery/mood-images'
 
 export type AvatarPresetId =
   | 'chantier'
@@ -12,8 +17,6 @@ export type AvatarPresetId =
   | 'technicien'
   | 'peintre'
   | 'voirie'
-
-export type Avatar2DConfig = Record<string, never>
 
 const presetMap: Record<AvatarPresetId, PremiumSpriteKey> = {
   chantier: 'presets_1',
@@ -23,15 +26,33 @@ const presetMap: Record<AvatarPresetId, PremiumSpriteKey> = {
   voirie: 'presets_5',
 }
 
+function hasMoodGallery(preset: AvatarPresetId): preset is MoodTradeId {
+  return preset === 'chantier' || preset === 'electricien'
+}
+
 export default function Avatar2D({
   preset,
+  mood = 'neutre',
   className = '',
   style,
 }: {
   preset: AvatarPresetId
+  mood?: MoodId
   className?: string
   style?: CSSProperties
 }) {
+  if (hasMoodGallery(preset)) {
+    return (
+      <img
+        className={className}
+        style={style}
+        src={MOOD_IMAGES[preset][mood]}
+        alt={`${preset} — ${mood}`}
+        draggable={false}
+      />
+    )
+  }
+
   const sprite = presetMap[preset]
   const rect = PREMIUM_SPRITES[sprite]
 
