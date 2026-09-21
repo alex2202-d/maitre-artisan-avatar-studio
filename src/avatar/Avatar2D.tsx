@@ -10,6 +10,10 @@ import {
   type MoodId,
   type MoodTradeId,
 } from '../gallery/mood-images'
+import {
+  EXTRA_MOOD_IMAGES,
+  type ExtraMoodTradeId,
+} from '../gallery/mood-images-extra'
 
 export type AvatarPresetId =
   | 'chantier'
@@ -26,8 +30,22 @@ const presetMap: Record<AvatarPresetId, PremiumSpriteKey> = {
   voirie: 'presets_5',
 }
 
-function hasMoodGallery(preset: AvatarPresetId): preset is MoodTradeId {
-  return preset === 'chantier' || preset === 'electricien'
+type MoodReadyPreset = MoodTradeId | ExtraMoodTradeId
+
+function hasMoodGallery(preset: AvatarPresetId): preset is MoodReadyPreset {
+  return (
+    preset === 'chantier' ||
+    preset === 'electricien' ||
+    preset === 'technicien' ||
+    preset === 'peintre'
+  )
+}
+
+function moodImage(preset: MoodReadyPreset, mood: MoodId) {
+  if (preset === 'technicien' || preset === 'peintre') {
+    return EXTRA_MOOD_IMAGES[preset][mood]
+  }
+  return MOOD_IMAGES[preset][mood]
 }
 
 export default function Avatar2D({
@@ -46,7 +64,7 @@ export default function Avatar2D({
       <img
         className={className}
         style={style}
-        src={MOOD_IMAGES[preset][mood]}
+        src={moodImage(preset, mood)}
         alt={`${preset} — ${mood}`}
         draggable={false}
       />
