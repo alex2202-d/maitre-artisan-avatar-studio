@@ -156,6 +156,10 @@ export default function App() {
 
   const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
   const options = useMemo(() => getOptions(activeCategory), [activeCategory])
+  const displayConfig = useMemo(
+    () => activeCategory === 'hair' ? { ...config, headwear: 'none' } : config,
+    [activeCategory, config],
+  )
 
   function notify(text: string) {
     setMessage(text)
@@ -167,7 +171,7 @@ export default function App() {
     if (!key) return
     setConfig((current) => {
       const next = { ...current, [key]: value }
-      if (categoryId === 'hair' && value !== 'none') next.headwear = 'none'
+      if (categoryId === 'hair') next.headwear = 'none'
       return next
     })
     setActivePreset('custom')
@@ -233,7 +237,7 @@ export default function App() {
         <div className="stage-card">
           <div className="stage-message left">Un artisan<br/>d’aujourd’hui<br/><b>bâtit un monde<br/>meilleur !</b></div>
           <div className="stage-message right">Crée.<br/>Équipe.<br/>Avance.</div>
-          <Avatar2D config={config} preset={activePreset} className="main-avatar" />
+          <Avatar2D config={displayConfig} preset={activeCategory === 'hair' ? 'custom' : activePreset} className="main-avatar" />
           <div className="stage-actions">
             <button onClick={randomize}>◈ Avatar aléatoire</button>
             <span>Vestiaire 2D interactif</span>
@@ -278,7 +282,13 @@ export default function App() {
               {options.map((option) => {
                 const key = configKey(activeCategory)
                 const selected = key ? config[key] === option.id : false
-                const preview = key ? { ...config, [key]: option.id } : config
+                const preview = key
+                  ? {
+                      ...config,
+                      [key]: option.id,
+                      ...(activeCategory === 'hair' ? { headwear: 'none' } : {}),
+                    }
+                  : config
                 return (
                   <button key={option.id} className={'option-card ' + (selected ? 'active' : '')} onClick={() => updateSlot(activeCategory, option.id)} aria-label={option.label}>
                     <div className="option-preview"><MiniAvatar config={preview} /></div>
