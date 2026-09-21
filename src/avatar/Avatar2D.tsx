@@ -127,34 +127,37 @@ function RasterSprite({
   box: Box
   half?: Half
 }) {
+  const clipId = `clip-${sprite}-${box.x}-${box.y}-${half ?? 'full'}`.replace(/[^a-zA-Z0-9_-]/g, '')
   const source = halfRect(PREMIUM_SPRITES[sprite], half)
+  const fit = Math.min(box.w / source.w, box.h / source.h)
+  const targetW = source.w * fit
+  const targetH = source.h * fit
+  const targetX = box.x + (box.w - targetW) / 2
+  const targetY = box.y + (box.h - targetH) / 2
+  const imageX = targetX - source.x * fit
+  const imageY = targetY - source.y * fit
   const cx = box.x + box.w / 2
   const cy = box.y + box.h / 2
   const transform = box.rotate ? `rotate(${box.rotate} ${cx} ${cy})` : undefined
 
-  // Important: the atlas must be cropped by its exact source rectangle.
-  // The previous implementation scaled the whole atlas into the target box,
-  // which allowed neighbouring sprites to appear around the selected part.
   return (
     <g transform={transform}>
-      <svg
-        x={box.x}
-        y={box.y}
-        width={box.w}
-        height={box.h}
-        viewBox={`${source.x} ${source.y} ${source.w} ${source.h}`}
-        preserveAspectRatio="xMidYMid meet"
-        overflow="hidden"
-      >
+      <defs>
+        <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+          <rect x={box.x} y={box.y} width={box.w} height={box.h} />
+        </clipPath>
+      </defs>
+
+      <g clipPath={`url(#${clipId})`} style={{ clipPath: `url(#${clipId})` }}>
         <image
           href={PREMIUM_ATLAS_URI}
-          x="0"
-          y="0"
-          width={PREMIUM_ATLAS_SIZE.width}
-          height={PREMIUM_ATLAS_SIZE.height}
+          x={imageX}
+          y={imageY}
+          width={PREMIUM_ATLAS_SIZE.width * fit}
+          height={PREMIUM_ATLAS_SIZE.height * fit}
           preserveAspectRatio="none"
         />
-      </svg>
+      </g>
     </g>
   )
 }
