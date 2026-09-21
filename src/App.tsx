@@ -6,6 +6,7 @@ import {
   type MoodTradeId,
 } from './gallery/mood-images'
 import type { ExtraMoodTradeId } from './gallery/mood-images-extra'
+import type { VoirieMoodTradeId } from './gallery/mood-images-voirie'
 
 type AvatarCard = {
   id: AvatarPresetId
@@ -55,7 +56,7 @@ const avatars: AvatarCard[] = [
     trade: 'Travaux publics',
     description: 'Haute visibilité orange · casque · tenue extérieure',
     tag: 'TP',
-    moodsReady: false,
+    moodsReady: true,
   },
 ]
 
@@ -73,14 +74,15 @@ function readSavedMood(): MoodId {
   return moods.includes(saved as MoodId) ? (saved as MoodId) : 'neutre'
 }
 
-type MoodReadyTradeId = MoodTradeId | ExtraMoodTradeId
+type MoodReadyTradeId = MoodTradeId | ExtraMoodTradeId | VoirieMoodTradeId
 
 function isMoodTrade(id: AvatarPresetId): id is MoodReadyTradeId {
   return (
     id === 'chantier' ||
     id === 'electricien' ||
     id === 'technicien' ||
-    id === 'peintre'
+    id === 'peintre' ||
+    id === 'voirie'
   )
 }
 
