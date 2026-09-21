@@ -1,4 +1,4 @@
-import { useId, type CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import {
   PREMIUM_ATLAS_SIZE,
   PREMIUM_ATLAS_URI,
@@ -127,35 +127,34 @@ function RasterSprite({
   box: Box
   half?: Half
 }) {
-  const clipId = useId().replace(/:/g, '')
   const source = halfRect(PREMIUM_SPRITES[sprite], half)
-  const fit = Math.min(box.w / source.w, box.h / source.h)
-  const renderW = PREMIUM_ATLAS_SIZE.width * fit
-  const renderH = PREMIUM_ATLAS_SIZE.height * fit
-  const offsetX = (box.w - source.w * fit) / 2
-  const offsetY = (box.h - source.h * fit) / 2
-  const imageX = box.x + offsetX - source.x * fit
-  const imageY = box.y + offsetY - source.y * fit
   const cx = box.x + box.w / 2
   const cy = box.y + box.h / 2
   const transform = box.rotate ? `rotate(${box.rotate} ${cx} ${cy})` : undefined
 
+  // Important: the atlas must be cropped by its exact source rectangle.
+  // The previous implementation scaled the whole atlas into the target box,
+  // which allowed neighbouring sprites to appear around the selected part.
   return (
     <g transform={transform}>
-      <defs>
-        <clipPath id={clipId}>
-          <rect x={box.x} y={box.y} width={box.w} height={box.h} />
-        </clipPath>
-      </defs>
-      <image
-        href={PREMIUM_ATLAS_URI}
-        x={imageX}
-        y={imageY}
-        width={renderW}
-        height={renderH}
-        preserveAspectRatio="none"
-        clipPath={`url(#${clipId})`}
-      />
+      <svg
+        x={box.x}
+        y={box.y}
+        width={box.w}
+        height={box.h}
+        viewBox={`${source.x} ${source.y} ${source.w} ${source.h}`}
+        preserveAspectRatio="xMidYMid meet"
+        overflow="hidden"
+      >
+        <image
+          href={PREMIUM_ATLAS_URI}
+          x="0"
+          y="0"
+          width={PREMIUM_ATLAS_SIZE.width}
+          height={PREMIUM_ATLAS_SIZE.height}
+          preserveAspectRatio="none"
+        />
+      </svg>
     </g>
   )
 }
