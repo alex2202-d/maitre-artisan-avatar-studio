@@ -58,8 +58,11 @@ const hairMap: Record<string, PremiumSpriteKey | null> = {
 const headwearMap: Record<string, PremiumSpriteKey | null> = {
   none: null,
   'hardhat-yellow': 'headwear_1',
-  'hardhat-blue': 'headwear_4',
+  'hardhat-white': 'headwear_2',
   'hardhat-orange': 'headwear_3',
+  'hardhat-blue': 'headwear_4',
+  'cap-blue': 'headwear_5',
+  // Legacy aliases kept so previously saved local configs still render.
   'cap-white': 'headwear_5',
   'cap-gray': 'headwear_5',
   beanie: 'headwear_2',
@@ -68,10 +71,12 @@ const headwearMap: Record<string, PremiumSpriteKey | null> = {
 const topMap: Record<string, PremiumSpriteKey> = {
   'tank-gray': 'tops_1',
   'tee-navy': 'tops_2',
-  'jacket-blue': 'tops_3',
+  'overalls-blue': 'tops_3',
   'jacket-olive': 'tops_4',
-  'painter-top': 'tops_3',
   'hivis-orange': 'tops_5',
+  // Legacy aliases kept so old presets/local storage remain compatible.
+  'jacket-blue': 'tops_3',
+  'painter-top': 'tops_3',
 }
 
 const bottomMap: Record<string, PremiumSpriteKey> = {
