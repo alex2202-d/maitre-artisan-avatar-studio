@@ -34,47 +34,40 @@ const expressionOptions: Option[] = [
 ]
 const hairOptions: Option[] = [
   { id: 'none', label: 'Sans cheveux' },
-  { id: 'short', label: 'Court' },
-  { id: 'side', label: 'Côté' },
+  { id: 'side', label: 'Frange' },
   { id: 'spiky', label: 'Ébouriffé' },
   { id: 'curly', label: 'Bouclé' },
-  { id: 'bob', label: 'Carré' },
-  { id: 'middle', label: 'Raie milieu' },
-  { id: 'classic', label: 'Classique' },
-  { id: 'bun', label: 'Chignon' },
+  { id: 'bob', label: 'Banane' },
+  { id: 'short', label: 'Court' },
 ]
 const headwearOptions: Option[] = [
   { id: 'none', label: 'Aucun' },
   { id: 'hardhat-yellow', label: 'Casque jaune' },
-  { id: 'hardhat-blue', label: 'Casque bleu' },
+  { id: 'hardhat-white', label: 'Casque blanc' },
   { id: 'hardhat-orange', label: 'Casque orange' },
-  { id: 'cap-white', label: 'Casquette blanche' },
-  { id: 'cap-gray', label: 'Casquette grise' },
-  { id: 'beanie', label: 'Bonnet' },
+  { id: 'hardhat-blue', label: 'Casque bleu' },
+  { id: 'cap-blue', label: 'Casquette bleue' },
 ]
 const topOptions: Option[] = [
   { id: 'tank-gray', label: 'Débardeur gris' },
   { id: 'tee-navy', label: 'T-shirt marine' },
-  { id: 'jacket-blue', label: 'Veste bleue' },
-  { id: 'jacket-olive', label: 'Veste atelier' },
-  { id: 'painter-top', label: 'Haut peintre' },
+  { id: 'overalls-blue', label: 'Salopette bleue' },
+  { id: 'jacket-olive', label: 'Veste kaki' },
   { id: 'hivis-orange', label: 'Haute visibilité' },
 ]
 const bottomOptions: Option[] = [
   { id: 'shorts-gray', label: 'Short gris' },
-  { id: 'pants-blue', label: 'Pantalon bleu' },
-  { id: 'overalls-blue', label: 'Salopette bleue' },
-  { id: 'cargo-olive', label: 'Cargo atelier' },
+  { id: 'pants-blue', label: 'Short de travail bleu' },
+  { id: 'cargo-olive', label: 'Cargo kaki' },
+  { id: 'cargo-dark', label: 'Pantalon noir' },
   { id: 'painter-pants', label: 'Pantalon peintre' },
-  { id: 'cargo-dark', label: 'Cargo sombre' },
 ]
 const gloveOptions: Option[] = [
   { id: 'none', label: 'Sans gants' },
   { id: 'yellow', label: 'Jaunes' },
   { id: 'black', label: 'Noirs' },
-  { id: 'orange', label: 'Renforcés' },
-  { id: 'white', label: 'Peintre' },
-  { id: 'blue', label: 'Bleus' },
+  { id: 'orange', label: 'Orange' },
+  { id: 'white', label: 'Blancs' },
 ]
 const shoeOptions: Option[] = [
   { id: 'bare', label: 'Pieds nus' },
@@ -86,12 +79,11 @@ const shoeOptions: Option[] = [
 ]
 const accessoryOptions: Option[] = [
   { id: 'none', label: 'Aucun' },
-  { id: 'belt-brown', label: 'Ceinture cuir' },
-  { id: 'belt-electric', label: 'Électricien' },
-  { id: 'belt-mechanic', label: 'Technicien' },
-  { id: 'belt-painter', label: 'Peintre' },
-  { id: 'harness', label: 'Harnais HV' },
-  { id: 'pouch-orange', label: 'Pochette outils' },
+  { id: 'belt-brown', label: 'Ceinture outils' },
+  { id: 'belt-electric', label: 'Sacoche électricien' },
+  { id: 'belt-mechanic', label: 'Sacoche technicien' },
+  { id: 'belt-painter', label: 'Accessoire peintre' },
+  { id: 'harness', label: 'Harnais' },
 ]
 const hairColorOptions: Option[] = [
   { id: 'brun', label: 'Brun' },
@@ -297,14 +289,7 @@ export default function App() {
             </div>
           )}
 
-          {activeCategory === 'hair' && (
-            <div className="hair-color-row">
-              <span>Couleur</span>
-              {hairColorOptions.map((item) => (
-                <button key={item.id} title={item.label} aria-label={item.label} className={config.hairColor === item.id ? 'active' : ''} data-color={item.id} onClick={() => { setConfig((c) => ({ ...c, hairColor: item.id })); setActivePreset('custom') }} />
-              ))}
-            </div>
-          )}
+
         </section>
 
         <footer className="wardrobe-footer">
